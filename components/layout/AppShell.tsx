@@ -1,4 +1,5 @@
 import { BottomTabBar } from "./BottomTabBar";
+import { InstallOnboarding } from "@/components/shared/InstallOnboarding";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ export function AppShell({ children }: AppShellProps) {
         {children}
       </main>
       <BottomTabBar />
+      <InstallOnboarding />
     </div>
   );
 }
