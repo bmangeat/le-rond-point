@@ -19,5 +19,15 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/login");
 
-  return <ProfileClient user={user} />;
+  // Compteurs pour la carte Administration (admins)
+  let memberCount = 0;
+  let invitationCount = 0;
+  if (user.role === "ADMIN") {
+    [memberCount, invitationCount] = await Promise.all([
+      db.user.count({ where: { isActive: true } }),
+      db.invitation.count({ where: { usedAt: null, expiresAt: { gt: new Date() } } }),
+    ]);
+  }
+
+  return <ProfileClient user={user} memberCount={memberCount} invitationCount={invitationCount} />;
 }

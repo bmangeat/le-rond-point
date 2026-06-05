@@ -7,7 +7,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { getMemberColor } from "@/lib/utils";
 import { isPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
-import { LogOut, BellRing, MapPin, User, ChevronRight, Shield, Camera, Loader2, Cake, Phone, Instagram, Linkedin, Music2, Ghost, Check } from "lucide-react";
+import { LogOut, BellRing, Bell, MapPin, User, ChevronRight, ChevronDown, Shield, Camera, Loader2, Cake, Phone, Instagram, Linkedin, Music2, Ghost, Share2, Check } from "lucide-react";
 
 interface ProfileUser {
   id: string;
@@ -49,6 +49,12 @@ function toDateInput(d?: string | Date | null): string {
   return new Date(d).toISOString().split("T")[0];
 }
 
+function formatFR(dateStr: string): string {
+  if (!dateStr) return "";
+  const [y, m, d] = dateStr.split("-");
+  return `${d}/${m}/${y}`;
+}
+
 function makeDraft(u: ProfileUser): Draft {
   return {
     name: u.name,
@@ -75,10 +81,28 @@ function Toggle({ on, onChange, disabled }: { on: boolean; onChange: () => void;
       aria-pressed={on}
       className={`relative w-[50px] h-[30px] rounded-full transition-colors flex-shrink-0 disabled:opacity-40 ${on ? "bg-available" : "bg-border"}`}
     >
-      <span
-        className={`absolute top-[3px] w-6 h-6 rounded-full bg-white shadow transition-all ${on ? "left-[23px]" : "left-[3px]"}`}
-      />
+      <span className={`absolute top-[3px] w-6 h-6 rounded-full bg-white shadow transition-all ${on ? "left-[23px]" : "left-[3px]"}`} />
     </button>
+  );
+}
+
+// ── Section repliable (carte accordéon) ──
+function Section({
+  icon, title, summary, defaultOpen = false, children,
+}: { icon: React.ReactNode; title: string; summary?: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
+      <button type="button" onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-3 p-4 text-left">
+        <div className="w-[38px] h-[38px] rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0 text-primary">{icon}</div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[16px] font-bold leading-tight">{title}</p>
+          {!open && summary && <p className="text-[13.5px] text-muted-foreground truncate mt-0.5">{summary}</p>}
+        </div>
+        <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform flex-shrink-0 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="px-4 pb-4 -mt-1">{children}</div>}
+    </div>
   );
 }
 
@@ -109,11 +133,10 @@ const NOTIF_TYPES = [
   { key: "notifPushPresence", title: "Nouvelles présences", desc: "Quand quelqu'un ajoute une présence" },
 ] as const;
 
-export function ProfileClient({ user }: { user: ProfileUser }) {
+export function ProfileClient({ user, memberCount, invitationCount }: { user: ProfileUser; memberCount: number; invitationCount: number }) {
   const router = useRouter();
   const color = getMemberColor(user.memberColor);
 
-  // Brouillon des champs éditables + suivi des modifications
   const initial = useMemo(() => makeDraft(user), [user]);
   const [baseline, setBaseline] = useState<Draft>(initial);
   const [draft, setDraft] = useState<Draft>(initial);
@@ -122,11 +145,9 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
 
   const [saving, setSaving] = useState(false);
 
-  // Photo (immédiat)
   const [image, setImage] = useState(user.image ?? null);
   const [photoBusy, setPhotoBusy] = useState(false);
 
-  // Push (immédiat)
   const [notifPush, setNotifPush] = useState(user.notifPush);
   const [pushSupported, setPushSupported] = useState(true);
   const [pushBusy, setPushBusy] = useState(false);
@@ -190,11 +211,18 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
     router.refresh();
   }
 
+  // Résumés (état replié)
+  const infoSummary = [draft.city, formatFR(draft.birthday)].filter(Boolean).join(" · ") || "À compléter";
+  const connectedSocials = SOCIALS.filter(s => draft[s.key].trim());
+  const socialSummary = connectedSocials.length ? connectedSocials.map(s => s.label).join(", ") : "Aucun pour le moment";
+  const enabledTypes = NOTIF_TYPES.filter(n => draft[n.key]).length;
+  const notifSummary = notifPush ? `Push activées · ${enabledTypes} type${enabledTypes > 1 ? "s" : ""}` : "Désactivées";
+
   return (
     <AppShell>
-      <div className="px-4 pt-6 pb-8 space-y-7">
+      <div className="px-4 pt-6 pb-8 space-y-4">
         {/* En-tête centré */}
-        <div className="flex flex-col items-center text-center pt-1 pb-1">
+        <div className="flex flex-col items-center text-center pt-1 pb-2">
           <label className="relative cursor-pointer mb-3.5">
             <Avatar name={user.name} image={image} memberColor={user.memberColor} size="xl" />
             <span className="absolute -right-0.5 -bottom-0.5 w-[30px] h-[30px] rounded-full border-[3px] border-background bg-primary text-white flex items-center justify-center shadow-sm">
@@ -214,50 +242,50 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
           </div>
         </div>
 
-        {/* Informations */}
-        <div className="space-y-4">
-          <div>
-            <FieldLabel icon={<User className="w-[15px] h-[15px]" />}>Prénom</FieldLabel>
-            <input className={inputClass} value={draft.name} onChange={e => setField("name", e.target.value)} placeholder="Ton prénom" />
+        {/* Mes informations */}
+        <Section icon={<User className="w-5 h-5" />} title="Mes informations" summary={infoSummary} defaultOpen>
+          <div className="space-y-4">
+            <div>
+              <FieldLabel icon={<User className="w-[15px] h-[15px]" />}>Prénom</FieldLabel>
+              <input className={inputClass} value={draft.name} onChange={e => setField("name", e.target.value)} placeholder="Ton prénom" />
+            </div>
+            <div>
+              <FieldLabel icon={<MapPin className="w-[15px] h-[15px]" />} optional>Ville de résidence</FieldLabel>
+              <input className={inputClass} value={draft.city} onChange={e => setField("city", e.target.value)} placeholder="Où tu vis aujourd'hui" />
+            </div>
+            <div>
+              <FieldLabel icon={<Cake className="w-[15px] h-[15px]" />} optional>Anniversaire</FieldLabel>
+              <input className={inputClass} type="date" value={draft.birthday} onChange={e => setField("birthday", e.target.value)} />
+            </div>
+            <div>
+              <FieldLabel icon={<Phone className="w-[15px] h-[15px]" />} optional>Téléphone</FieldLabel>
+              <input className={inputClass} type="tel" value={draft.phone} onChange={e => setField("phone", e.target.value)} placeholder="06 12 34 56 78" />
+            </div>
           </div>
-          <div>
-            <FieldLabel icon={<MapPin className="w-[15px] h-[15px]" />} optional>Ville de résidence</FieldLabel>
-            <input className={inputClass} value={draft.city} onChange={e => setField("city", e.target.value)} placeholder="Où tu vis aujourd'hui" />
-          </div>
-          <div>
-            <FieldLabel icon={<Cake className="w-[15px] h-[15px]" />} optional>Anniversaire</FieldLabel>
-            <input className={inputClass} type="date" value={draft.birthday} onChange={e => setField("birthday", e.target.value)} />
-          </div>
-          <div>
-            <FieldLabel icon={<Phone className="w-[15px] h-[15px]" />} optional>Téléphone</FieldLabel>
-            <input className={inputClass} type="tel" value={draft.phone} onChange={e => setField("phone", e.target.value)} placeholder="06 12 34 56 78" />
-          </div>
-        </div>
+        </Section>
 
         {/* Réseaux sociaux */}
-        <div className="space-y-3.5">
-          <h2 className="text-label">Réseaux sociaux</h2>
-          {SOCIALS.map(s => (
-            <div key={s.key}>
-              <FieldLabel icon={<s.Icon className="w-[15px] h-[15px]" style={{ color: s.color }} />} optional>{s.label}</FieldLabel>
-              <div className="flex items-center gap-2 px-3.5 rounded-2xl border-[1.5px] border-border bg-surface transition focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/15">
-                {s.prefix && <span className="text-muted-foreground text-[15px] font-medium">{s.prefix}</span>}
-                <input
-                  className="flex-1 min-w-0 bg-transparent border-none outline-none py-3 text-[15px] text-foreground placeholder:text-muted-foreground/70"
-                  value={draft[s.key]}
-                  onChange={e => setField(s.key, e.target.value)}
-                  placeholder={s.ph}
-                />
+        <Section icon={<Share2 className="w-5 h-5" />} title="Réseaux sociaux" summary={socialSummary}>
+          <div className="space-y-3.5">
+            {SOCIALS.map(s => (
+              <div key={s.key}>
+                <FieldLabel icon={<s.Icon className="w-[15px] h-[15px]" style={{ color: s.color }} />} optional>{s.label}</FieldLabel>
+                <div className="flex items-center gap-2 px-3.5 rounded-2xl border-[1.5px] border-border bg-surface transition focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/15">
+                  {s.prefix && <span className="text-muted-foreground text-[15px] font-medium">{s.prefix}</span>}
+                  <input
+                    className="flex-1 min-w-0 bg-transparent border-none outline-none py-3 text-[15px] text-foreground placeholder:text-muted-foreground/70"
+                    value={draft[s.key]}
+                    onChange={e => setField(s.key, e.target.value)}
+                    placeholder={s.ph}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Section>
 
         {/* Notifications */}
-        <div className="space-y-3">
-          <h2 className="text-label">Notifications</h2>
-
-          {/* Push master (immédiat) */}
+        <Section icon={<Bell className="w-5 h-5" />} title="Notifications" summary={notifSummary}>
           <div className="flex items-center gap-3 px-0.5 py-1">
             <div className="w-[38px] h-[38px] rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0">
               <BellRing className="w-5 h-5 text-primary" />
@@ -269,14 +297,13 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
             <Toggle on={notifPush} onChange={handlePushToggle} disabled={pushBusy || !pushSupported} />
           </div>
 
-          {pushMsg && <p className="text-caption text-destructive bg-destructive/10 rounded-lg px-3 py-2">{pushMsg}</p>}
+          {pushMsg && <p className="text-caption text-destructive bg-destructive/10 rounded-lg px-3 py-2 mt-2">{pushMsg}</p>}
           {!pushSupported && (
-            <p className="text-caption">Les notifications push nécessitent d&apos;installer l&apos;app sur ton écran d&apos;accueil.</p>
+            <p className="text-caption mt-2">Les notifications push nécessitent d&apos;installer l&apos;app sur ton écran d&apos;accueil.</p>
           )}
 
-          <div className="h-px bg-border" />
+          <div className="h-px bg-border my-3" />
 
-          {/* Sous-types (brouillon) */}
           <div className={notifPush ? "" : "opacity-50"}>
             <p className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground mb-2 px-0.5">Me prévenir pour</p>
             {NOTIF_TYPES.map((n, i) => (
@@ -289,28 +316,33 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
               </div>
             ))}
           </div>
-        </div>
+        </Section>
 
         {/* Administration */}
         {user.role === "ADMIN" && (
-          <a href="/admin" className="card flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-[38px] h-[38px] rounded-xl bg-primary-light flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-[15px] font-semibold">Administration</p>
+          <a href="/admin" className="bg-surface rounded-2xl shadow-sm border border-border flex items-center gap-3 p-4">
+            <div className="w-[38px] h-[38px] rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0 text-primary">
+              <Shield className="w-5 h-5" />
             </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[16px] font-bold leading-tight">Administration</p>
+              <p className="text-[13.5px] text-muted-foreground mt-0.5">
+                {memberCount} membre{memberCount > 1 ? "s" : ""} · {invitationCount} invitation{invitationCount > 1 ? "s" : ""}
+              </p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
           </a>
         )}
 
         {/* Déconnexion */}
-        <form action="/api/auth/signout" method="POST">
-          <button type="submit" className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-muted-foreground text-sm font-medium hover:bg-muted transition-colors">
-            <LogOut className="w-4 h-4" />
+        <form action="/api/auth/signout" method="POST" className="pt-2">
+          <button type="submit" className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-destructive text-[15px] font-semibold hover:bg-destructive/5 transition-colors">
+            <LogOut className="w-[18px] h-[18px]" />
             Se déconnecter
           </button>
         </form>
+
+        <p className="text-center text-[12px] text-muted-foreground">Le Rond Point · v1.0</p>
 
         {/* Barre Enregistrer (si modifié) */}
         {dirty && (
