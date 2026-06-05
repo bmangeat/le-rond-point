@@ -297,6 +297,15 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
                 </button>
               </div>
 
+              {/* Voir le profil complet */}
+              <Link
+                href={`/membres/${selectedMember.id}`}
+                className="flex items-center justify-between gap-3 text-sm text-primary font-medium"
+              >
+                Voir le profil complet
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+
               {/* Rôle */}
               <div>
                 <h3 className="text-label mb-2">Rôle</h3>

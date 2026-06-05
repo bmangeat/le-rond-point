@@ -9,7 +9,11 @@ export default async function ProfilePage() {
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, name: true, email: true, image: true, city: true, notifEmail: true, notifPush: true, memberColor: true, role: true },
+    select: {
+      id: true, name: true, email: true, image: true, city: true,
+      notifEmail: true, notifPush: true, memberColor: true, role: true,
+      birthday: true, phone: true, instagram: true, snapchat: true, tiktok: true, linkedin: true,
+    },
   });
 
   if (!user) redirect("/login");

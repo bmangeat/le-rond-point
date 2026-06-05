@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { upload } from "@vercel/blob/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { getMemberColor } from "@/lib/utils";
 import { isPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
-import { LogOut, BellRing, MapPin, User, ChevronRight, Shield } from "lucide-react";
+import { LogOut, BellRing, MapPin, User, ChevronRight, Shield, Camera, Loader2, Cake, Phone, Instagram, Linkedin, Music2, Ghost } from "lucide-react";
 
 interface ProfileUser {
   id: string;
@@ -18,6 +19,17 @@ interface ProfileUser {
   notifPush: boolean;
   memberColor: number;
   role: "ADMIN" | "MEMBER";
+  birthday?: string | Date | null;
+  phone?: string | null;
+  instagram?: string | null;
+  snapchat?: string | null;
+  tiktok?: string | null;
+  linkedin?: string | null;
+}
+
+function toDateInput(d?: string | Date | null): string {
+  if (!d) return "";
+  return new Date(d).toISOString().split("T")[0];
 }
 
 function Toggle({ on, onChange, disabled }: { on: boolean; onChange: () => void; disabled?: boolean }) {
@@ -42,6 +54,39 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
   const [notifPush, setNotifPush] = useState(user.notifPush);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const [image, setImage] = useState(user.image ?? null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [birthday, setBirthday] = useState(toDateInput(user.birthday));
+  const [phone, setPhone] = useState(user.phone ?? "");
+  const [instagram, setInstagram] = useState(user.instagram ?? "");
+  const [snapchat, setSnapchat] = useState(user.snapchat ?? "");
+  const [tiktok, setTiktok] = useState(user.tiktok ?? "");
+  const [linkedin, setLinkedin] = useState(user.linkedin ?? "");
+
+  async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoBusy(true);
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const blob = await upload(`avatars/${user.id}-${Date.now()}.${ext}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/profile/photo",
+      });
+      setImage(blob.url);
+      await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: blob.url }),
+      });
+      router.refresh();
+    } catch {
+      alert("Échec de l'envoi de la photo. Réessaie.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   const [pushSupported, setPushSupported] = useState(true);
   const [pushBusy, setPushBusy] = useState(false);
@@ -80,7 +125,10 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
     await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, city: city || null, notifEmail, notifPush }),
+      body: JSON.stringify({
+        name, city, notifEmail, notifPush,
+        birthday: birthday || null, phone, instagram, snapchat, tiktok, linkedin,
+      }),
     });
     setSaving(false);
     setSaved(true);
@@ -95,7 +143,13 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
       <div className="px-4 pt-6 pb-8 space-y-6">
         {/* Header profil */}
         <div className="flex items-center gap-4">
-          <Avatar name={user.name} image={user.image} memberColor={user.memberColor} size="lg" />
+          <label className="relative cursor-pointer flex-shrink-0">
+            <Avatar name={user.name} image={image} memberColor={user.memberColor} size="lg" />
+            <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
+              {photoBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+            </span>
+            <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} disabled={photoBusy} />
+          </label>
           <div>
             <p className="text-heading-2">{user.name}</p>
             <p className="text-caption">{user.email}</p>
@@ -148,6 +202,57 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
               className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
           </div>
+
+          <div>
+            <label className="text-label block mb-1.5">
+              <Cake className="w-3 h-3 inline mr-1" />Anniversaire
+              <span className="normal-case font-normal text-muted-foreground ml-1">(optionnel)</span>
+            </label>
+            <input
+              type="date"
+              value={birthday}
+              onChange={e => setBirthday(e.target.value)}
+              className="w-full px-3 py-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="text-label block mb-1.5">
+              <Phone className="w-3 h-3 inline mr-1" />Téléphone
+              <span className="normal-case font-normal text-muted-foreground ml-1">(optionnel)</span>
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              placeholder="06 12 34 56 78"
+              className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            />
+          </div>
+        </div>
+
+        {/* Réseaux sociaux */}
+        <div className="space-y-4">
+          <h2 className="text-label">Réseaux sociaux</h2>
+          {([
+            { state: instagram, set: setInstagram, label: "Instagram", Icon: Instagram, placeholder: "pseudo" },
+            { state: snapchat, set: setSnapchat, label: "Snapchat", Icon: Ghost, placeholder: "pseudo" },
+            { state: tiktok, set: setTiktok, label: "TikTok", Icon: Music2, placeholder: "pseudo" },
+            { state: linkedin, set: setLinkedin, label: "LinkedIn", Icon: Linkedin, placeholder: "pseudo ou lien" },
+          ] as const).map(({ state, set, label, Icon, placeholder }) => (
+            <div key={label}>
+              <label className="text-label block mb-1.5">
+                <Icon className="w-3 h-3 inline mr-1" />{label}
+                <span className="normal-case font-normal text-muted-foreground ml-1">(optionnel)</span>
+              </label>
+              <input
+                value={state}
+                onChange={e => set(e.target.value)}
+                placeholder={placeholder}
+                className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+            </div>
+          ))}
         </div>
 
         {/* Notifications */}

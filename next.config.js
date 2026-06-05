@@ -6,6 +6,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "lh3.googleusercontent.com", // Google profile pictures
       },
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com", // Vercel Blob (photos de profil)
+      },
     ],
   },
 };

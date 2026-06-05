@@ -18,6 +18,12 @@ model User {
   image         String?
   emailVerified DateTime?
   city          String?
+  birthday      DateTime?
+  phone         String?
+  instagram     String?
+  snapchat      String?
+  tiktok        String?
+  linkedin      String?
   notifEmail    Boolean     @default(true)
   notifPush     Boolean     @default(false)
   memberColor   Int         @default(1) // 1-12, assigné auto à l'inscription

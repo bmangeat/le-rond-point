@@ -7,17 +7,29 @@ export async function PATCH(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
-  const { name, city, notifEmail, notifPush } = await req.json();
+  const body = await req.json();
+  const { name, city, notifEmail, notifPush, image, birthday, phone, instagram, snapchat, tiktok, linkedin } = body;
+
+  // Nettoie un champ texte optionnel : "" → null, sinon trim
+  const clean = (v: unknown) =>
+    typeof v === "string" ? (v.trim() === "" ? null : v.trim()) : undefined;
 
   const updated = await db.user.update({
     where: { id: session.user.id },
     data: {
       ...(name && { name }),
-      city: city ?? null,
+      ...(city !== undefined && { city: clean(city) }),
       ...(typeof notifEmail === "boolean" && { notifEmail }),
       ...(typeof notifPush === "boolean" && { notifPush }),
+      ...(image !== undefined && { image: clean(image) }),
+      ...(birthday !== undefined && { birthday: birthday ? new Date(birthday) : null }),
+      ...(phone !== undefined && { phone: clean(phone) }),
+      ...(instagram !== undefined && { instagram: clean(instagram) }),
+      ...(snapchat !== undefined && { snapchat: clean(snapchat) }),
+      ...(tiktok !== undefined && { tiktok: clean(tiktok) }),
+      ...(linkedin !== undefined && { linkedin: clean(linkedin) }),
     },
-    select: { id: true, name: true, city: true, notifEmail: true, notifPush: true },
+    select: { id: true },
   });
 
   return NextResponse.json(updated);

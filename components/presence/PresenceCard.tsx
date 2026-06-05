@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Avatar } from "@/components/shared/Avatar";
 import { AvailabilityBadge } from "@/components/shared/AvailabilityBadge";
 import { formatDateRange } from "@/lib/utils";
@@ -31,16 +32,20 @@ export function PresenceCard({ presence, currentUserId, onEdit, onDelete }: Pres
 
   return (
     <div className="card flex gap-3">
-      <Avatar
-        name={user.name}
-        image={user.image}
-        memberColor={user.memberColor}
-        size="md"
-      />
+      <Link href={`/membres/${user.id}`} className="flex-shrink-0">
+        <Avatar
+          name={user.name}
+          image={user.image}
+          memberColor={user.memberColor}
+          size="md"
+        />
+      </Link>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-body-strong font-semibold text-foreground">{user.name}</p>
+            <Link href={`/membres/${user.id}`} className="text-body-strong font-semibold text-foreground hover:underline">
+              {user.name}
+            </Link>
             {user.city && (
               <p className="text-caption flex items-center gap-0.5 mt-0.5">
                 <MapPin className="w-3 h-3" />

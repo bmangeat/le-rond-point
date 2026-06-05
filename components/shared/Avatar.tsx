@@ -7,7 +7,7 @@ interface AvatarProps {
   name: string;
   image?: string | null;
   memberColor?: number;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   className?: string;
 }
 
@@ -15,7 +15,10 @@ const sizeClasses = {
   sm: "w-8 h-8 text-xs",
   md: "w-10 h-10 text-sm",
   lg: "w-12 h-12 text-base",
+  xl: "w-24 h-24 text-2xl",
 };
+
+const sizePx = { sm: 32, md: 40, lg: 48, xl: 96 } as const;
 
 export function Avatar({ name, image, memberColor = 1, size = "md", className }: AvatarProps) {
   const color = getMemberColor(memberColor);
@@ -34,8 +37,8 @@ export function Avatar({ name, image, memberColor = 1, size = "md", className }:
         <Image
           src={image}
           alt={name}
-          width={size === "lg" ? 48 : size === "md" ? 40 : 32}
-          height={size === "lg" ? 48 : size === "md" ? 40 : 32}
+          width={sizePx[size]}
+          height={sizePx[size]}
           className="w-full h-full object-cover"
         />
       ) : (

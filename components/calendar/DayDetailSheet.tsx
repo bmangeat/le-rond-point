@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { X } from "lucide-react";
 import { Avatar } from "@/components/shared/Avatar";
 import { AvailabilityBadge } from "@/components/shared/AvailabilityBadge";
@@ -93,15 +94,19 @@ export function DayDetailSheet({
               const isOwn = p.user.id === currentUserId;
               return (
                 <div key={p.id} className="flex gap-3 py-2 border-b border-border last:border-0">
-                  <Avatar
-                    name={p.user.name}
-                    image={p.user.image}
-                    memberColor={p.user.memberColor}
-                    size="md"
-                  />
+                  <Link href={`/membres/${p.user.id}`} className="flex-shrink-0">
+                    <Avatar
+                      name={p.user.name}
+                      image={p.user.image}
+                      memberColor={p.user.memberColor}
+                      size="md"
+                    />
+                  </Link>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-body-strong font-semibold">{p.user.name}</p>
+                      <Link href={`/membres/${p.user.id}`} className="text-body-strong font-semibold hover:underline">
+                        {p.user.name}
+                      </Link>
                       {isOwn && (
                         <button
                           onClick={() => onEditPresence(p.id)}
