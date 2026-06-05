@@ -20,5 +20,5 @@ export async function POST(req: Request) {
   const base = process.env.NEXTAUTH_URL ?? new URL(req.url).origin;
   const url = `${base}/invite/${invitation.token}`;
 
-  return NextResponse.json({ url, expiresAt }, { status: 201 });
+  return NextResponse.json({ url, invitation }, { status: 201 });
 }

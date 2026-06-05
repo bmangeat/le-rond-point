@@ -38,6 +38,10 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
   const router = useRouter();
   const refresh = useCallback(() => router.refresh(), [router]);
 
+  // Liste locale des invitations en attente (mise à jour optimiste).
+  // Évite un router.refresh() qui réinitialiserait l'affichage du lien généré.
+  const [pending, setPending] = useState<Invitation[]>(pendingInvitations);
+
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
@@ -84,7 +88,7 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setInviteLink(data.url);
-      refresh();
+      if (data.invitation) setPending(p => [data.invitation, ...p]);
     } catch (err) {
       setInviteError(err instanceof Error ? err.message : "Erreur");
     } finally {
@@ -112,9 +116,14 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      setPending(p => [
+        { id: data.token, email: inviteEmail, token: data.token, expiresAt, createdAt: new Date() },
+        ...p.filter(i => i.email !== inviteEmail),
+      ]);
       setInviteSuccess(`Invitation envoyée à ${inviteEmail} !`);
       setInviteEmail("");
-      refresh();
     } catch (err) {
       setInviteError(err instanceof Error ? err.message : "Erreur");
     } finally {
@@ -215,11 +224,11 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
         </div>
 
         {/* Invitations en attente */}
-        {pendingInvitations.length > 0 && (
+        {pending.length > 0 && (
           <div>
-            <h2 className="text-label mb-3">Invitations en attente ({pendingInvitations.length})</h2>
+            <h2 className="text-label mb-3">Invitations en attente ({pending.length})</h2>
             <div className="space-y-2">
-              {pendingInvitations.map(inv => (
+              {pending.map(inv => (
                 <div key={inv.id} className="card flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                     {inv.email ? (
