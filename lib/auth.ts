@@ -34,6 +34,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      // Lie automatiquement le compte Google à un user existant ayant le même email
+      // (ex: admin seedé, ou membre invité créé avant sa première connexion).
+      // Sûr ici car Google vérifie l'email.
+      allowDangerousEmailAccountLinking: true,
     }),
   ],
   pages: {
