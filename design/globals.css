@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Google Font ─────────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+/* ─── Design Tokens ───────────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    /* Primary — Bleu vif */
+    --primary:            220 91% 60%;   /* #3B7BF8 */
+    --primary-light:      220 100% 97%;  /* #EFF6FF */
+    --primary-dark:       220 91% 48%;   /* #1D5FD8 */
+    --primary-foreground: 0 0% 100%;
+
+    /* Disponibilité : Ouvert */
+    --available:          160 72% 38%;   /* #10B981 */
+    --available-light:    152 81% 96%;   /* #ECFDF5 */
+    --available-foreground: 0 0% 100%;
+
+    /* Disponibilité : Peu dispo */
+    --busy:               38 92% 50%;    /* #F59E0B */
+    --busy-light:         48 100% 96%;   /* #FFFBEB */
+    --busy-foreground:    0 0% 100%;
+
+    /* Surfaces */
+    --background:         220 33% 98%;   /* #F8FAFF — blanc légèrement bleuté */
+    --surface:            0 0% 100%;     /* #FFFFFF */
+    --surface-raised:     220 50% 97%;   /* #F1F6FF */
+    --surface-overlay:    220 50% 97%;
+
+    /* Texte */
+    --foreground:         220 26% 14%;   /* #1E293B */
+    --muted:              220 14% 96%;   /* #F1F5F9 */
+    --muted-foreground:   220 9% 46%;    /* #64748B */
+    --subtle:             220 13% 69%;   /* #94A3B8 */
+
+    /* Bordures & inputs */
+    --border:             220 13% 91%;   /* #E2E8F0 */
+    --input:              220 13% 91%;
+    --ring:               220 91% 60%;
+
+    /* shadcn/ui — aliases */
+    --card:               0 0% 100%;
+    --card-foreground:    220 26% 14%;
+    --popover:            0 0% 100%;
+    --popover-foreground: 220 26% 14%;
+    --secondary:          220 50% 97%;
+    --secondary-foreground: 220 26% 14%;
+    --accent:             220 50% 97%;
+    --accent-foreground:  220 26% 14%;
+    --destructive:        0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Radius global (shadcn/ui) */
+    --radius: 0.75rem; /* 12px */
+  }
+}
+
+/* ─── Base Styles ─────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: 15px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Smooth scroll */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Safe area pour iOS */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ─── Typography Classes ──────────────────────────────────────────────────── */
+@layer components {
+  .text-display {
+    @apply text-2xl font-bold tracking-tight;
+  }
+  .text-heading-1 {
+    @apply text-xl font-bold tracking-tight;
+  }
+  .text-heading-2 {
+    @apply text-lg font-semibold tracking-tight;
+  }
+  .text-heading-3 {
+    @apply text-base font-semibold;
+  }
+  .text-body {
+    @apply text-sm font-normal;
+  }
+  .text-body-strong {
+    @apply text-sm font-medium;
+  }
+  .text-caption {
+    @apply text-xs font-normal text-muted-foreground;
+  }
+  .text-label {
+    @apply text-2xs font-medium uppercase tracking-widest text-subtle;
+  }
+}
+
+/* ─── Component Utilities ─────────────────────────────────────────────────── */
+@layer components {
+
+  /* Card standard */
+  .card {
+    @apply bg-surface rounded-xl shadow-sm border border-border p-4;
+  }
+
+  /* Bottom Sheet backdrop */
+  .sheet-backdrop {
+    @apply fixed inset-0 bg-black/40 backdrop-blur-sm z-40;
+  }
+
+  /* Bottom Tab Bar */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-border
+           flex items-center justify-around px-4 z-30 safe-bottom;
+  }
+
+  /* FAB (Floating Action Button) */
+  .fab {
+    @apply fixed bottom-[88px] right-4 z-30
+           w-14 h-14 rounded-full bg-primary shadow-primary
+           flex items-center justify-center
+           text-white text-2xl font-light
+           active:scale-95 transition-transform;
+  }
+
+  /* Badge de disponibilité */
+  .badge-available {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+           bg-available-light text-available text-xs font-medium;
+  }
+  .badge-busy {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+           bg-busy-light text-busy text-xs font-medium;
+  }
+
+  /* Badge nombre membres (calendrier) */
+  .calendar-badge {
+    @apply inline-flex items-center justify-center
+           w-5 h-5 rounded-full bg-primary text-white
+           text-2xs font-semibold;
+  }
+
+  /* Jour actif dans le calendrier (mes présences) */
+  .calendar-day-mine {
+    @apply bg-primary-light border-2 border-primary rounded-lg font-semibold text-primary;
+  }
+
+  /* Avatar cercle */
+  .avatar {
+    @apply rounded-full bg-surface-raised flex items-center justify-center
+           font-semibold text-foreground overflow-hidden flex-shrink-0;
+  }
+  .avatar-sm  { @apply w-8 h-8 text-xs; }
+  .avatar-md  { @apply w-10 h-10 text-sm; }
+  .avatar-lg  { @apply w-12 h-12 text-base; }
+}
+
+/* ─── Animations ──────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Slide up pour les bottom sheets */
+  @keyframes slide-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  .animate-slide-up {
+    animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* Fade in pour les overlays */
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.2s ease-out;
+  }
+}

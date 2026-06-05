@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Le Rond Point — Design Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Tokens ───────────────────────────────────────────────── */
+    :root {
+      --primary:        #3B7BF8;
+      --primary-light:  #EFF6FF;
+      --primary-dark:   #1D5FD8;
+      --available:      #10B981;
+      --available-light:#ECFDF5;
+      --busy:           #F59E0B;
+      --busy-light:     #FFFBEB;
+      --bg:             #F8FAFF;
+      --surface:        #FFFFFF;
+      --surface-raised: #F1F6FF;
+      --fg:             #1E293B;
+      --muted-fg:       #64748B;
+      --subtle:         #94A3B8;
+      --border:         #E2E8F0;
+      --destructive:    #EF4444;
+
+      /* Member colors */
+      --m1:#3B7BF8; --m2:#10B981; --m3:#8B5CF6; --m4:#F43F5E;
+      --m5:#F59E0B; --m6:#06B6D4; --m7:#F97316; --m8:#14B8A6;
+      --m9:#EC4899; --m10:#6366F1; --m11:#84CC16; --m12:#0EA5E9;
+
+      --radius-sm:  8px;
+      --radius-md:  12px;
+      --radius-lg:  16px;
+      --radius-xl:  20px;
+      --radius-2xl: 24px;
+      --radius-full:9999px;
+
+      --shadow-sm:  0 1px 4px 0 rgb(0 0 0/6%), 0 1px 2px -1px rgb(0 0 0/4%);
+      --shadow-md:  0 4px 16px 0 rgb(0 0 0/8%), 0 2px 4px -1px rgb(0 0 0/4%);
+      --shadow-primary: 0 4px 16px 0 rgb(59 123 248/25%);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 40px 24px 80px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────── */
+    .page-title {
+      font-size: 28px; font-weight: 700; letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .page-subtitle {
+      font-size: 15px; color: var(--muted-fg); margin-bottom: 48px;
+    }
+    section { margin-bottom: 56px; }
+    .section-title {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--subtle);
+      margin-bottom: 20px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+    .col { display: flex; flex-direction: column; gap: 8px; }
+
+    /* ── Color Swatches ───────────────────────────────────────── */
+    .swatch-group { display: flex; flex-direction: column; gap: 6px; min-width: 120px; }
+    .swatch {
+      height: 56px; border-radius: var(--radius-md);
+      border: 1px solid rgb(0 0 0/6%);
+    }
+    .swatch-label { font-size: 12px; color: var(--muted-fg); }
+    .swatch-hex   { font-size: 11px; color: var(--subtle); font-variant-numeric: tabular-nums; }
+
+    /* ── Typography ───────────────────────────────────────────── */
+    .type-row { padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .type-row:last-child { border-bottom: none; }
+    .type-meta { font-size: 11px; color: var(--subtle); margin-top: 2px; }
+    .t-display  { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+    .t-h1       { font-size: 24px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.3; }
+    .t-h2       { font-size: 20px; font-weight: 600; letter-spacing: -0.01em;  line-height: 1.35; }
+    .t-h3       { font-size: 17px; font-weight: 600; line-height: 1.4; }
+    .t-body     { font-size: 15px; font-weight: 400; line-height: 1.6; }
+    .t-body-s   { font-size: 15px; font-weight: 500; line-height: 1.6; }
+    .t-small    { font-size: 13px; font-weight: 400; line-height: 1.5; color: var(--muted-fg); }
+    .t-caption  { font-size: 11px; font-weight: 500; line-height: 1.4; color: var(--subtle); letter-spacing: 0.01em; }
+    .t-label    { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--subtle); }
+
+    /* ── Spacing ──────────────────────────────────────────────── */
+    .spacing-row { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+    .spacing-bar { background: var(--primary-light); border: 1px solid var(--primary); border-radius: 4px; height: 24px; }
+    .spacing-label { font-size: 13px; color: var(--muted-fg); min-width: 80px; }
+    .spacing-val   { font-size: 12px; color: var(--subtle); }
+
+    /* ── Radius ───────────────────────────────────────────────── */
+    .radius-grid { display: flex; flex-wrap: wrap; gap: 16px; }
+    .radius-box {
+      width: 80px; height: 80px; background: var(--primary-light);
+      border: 2px solid var(--primary);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 4px;
+    }
+    .radius-box-label { font-size: 11px; font-weight: 600; color: var(--primary); }
+    .radius-box-val   { font-size: 10px; color: var(--muted-fg); }
+
+    /* ── Shadows ──────────────────────────────────────────────── */
+    .shadow-card {
+      background: var(--surface); padding: 16px 20px;
+      border-radius: var(--radius-lg); min-width: 140px;
+      font-size: 13px; font-weight: 500; color: var(--muted-fg);
+    }
+
+    /* ── Components ───────────────────────────────────────────── */
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 8px; font-family: inherit; font-weight: 600; cursor: pointer;
+      border: none; transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--primary); color: #fff;
+      padding: 12px 20px; border-radius: var(--radius-full);
+      font-size: 15px; box-shadow: var(--shadow-primary);
+    }
+    .btn-secondary {
+      background: var(--primary-light); color: var(--primary);
+      padding: 12px 20px; border-radius: var(--radius-full); font-size: 15px;
+    }
+    .btn-ghost {
+      background: transparent; color: var(--muted-fg);
+      padding: 12px 20px; border-radius: var(--radius-full); font-size: 15px;
+    }
+    .btn-destructive {
+      background: #FEF2F2; color: var(--destructive);
+      padding: 12px 20px; border-radius: var(--radius-full); font-size: 15px;
+    }
+    .btn-sm {
+      padding: 8px 16px; font-size: 13px; border-radius: var(--radius-full);
+    }
+    .btn-icon {
+      width: 44px; height: 44px; border-radius: var(--radius-full);
+      background: var(--surface-raised); color: var(--fg);
+      padding: 0; font-size: 20px;
+    }
+    .fab {
+      width: 56px; height: 56px; border-radius: var(--radius-full);
+      background: var(--primary); color: #fff;
+      font-size: 28px; line-height: 1; box-shadow: var(--shadow-primary);
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; cursor: pointer;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: var(--radius-full);
+      font-size: 12px; font-weight: 500;
+    }
+    .badge-available { background: var(--available-light); color: var(--available); }
+    .badge-busy      { background: var(--busy-light);      color: var(--busy); }
+    .badge-count {
+      background: var(--primary); color: #fff;
+      min-width: 20px; height: 20px; border-radius: var(--radius-full);
+      font-size: 11px; font-weight: 700; padding: 0 5px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+
+    /* Avatars */
+    .avatar {
+      border-radius: var(--radius-full); background: var(--surface-raised);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 600; color: #fff; flex-shrink: 0;
+    }
+    .avatar-sm { width: 32px; height: 32px; font-size: 12px; }
+    .avatar-md { width: 40px; height: 40px; font-size: 14px; }
+    .avatar-lg { width: 48px; height: 48px; font-size: 16px; }
+
+    /* Inputs */
+    .input-group { display: flex; flex-direction: column; gap: 6px; min-width: 220px; }
+    .input-label { font-size: 13px; font-weight: 500; color: var(--fg); }
+    .input {
+      width: 100%; padding: 11px 14px; border-radius: var(--radius-md);
+      border: 1.5px solid var(--border); background: var(--surface);
+      font-family: inherit; font-size: 15px; color: var(--fg);
+      outline: none; transition: border-color 0.15s;
+    }
+    .input:focus   { border-color: var(--primary); }
+    .input::placeholder { color: var(--subtle); }
+
+    /* Cards */
+    .presence-card {
+      background: var(--surface); border-radius: var(--radius-xl);
+      border: 1px solid var(--border); padding: 16px;
+      box-shadow: var(--shadow-sm); min-width: 260px; max-width: 320px;
+    }
+    .presence-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .presence-card-name { font-size: 15px; font-weight: 600; }
+    .presence-card-dates { font-size: 13px; color: var(--muted-fg); margin-bottom: 8px; }
+    .presence-card-note {
+      font-size: 13px; color: var(--fg);
+      background: var(--surface-raised); border-radius: var(--radius-sm);
+      padding: 8px 10px; margin-bottom: 10px;
+    }
+
+    /* Calendar preview */
+    .calendar-preview {
+      background: var(--surface); border-radius: var(--radius-2xl);
+      border: 1px solid var(--border); padding: 20px;
+      box-shadow: var(--shadow-sm); max-width: 360px;
+    }
+    .cal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .cal-month { font-size: 17px; font-weight: 600; }
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      gap: 2px; text-align: center;
+    }
+    .cal-dow {
+      font-size: 11px; font-weight: 600; color: var(--subtle);
+      text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 4px 0 8px;
+    }
+    .cal-day {
+      position: relative; padding: 6px 2px;
+      border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 400;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      cursor: pointer; color: var(--fg);
+    }
+    .cal-day.mine {
+      background: var(--primary-light);
+      border: 2px solid var(--primary);
+      font-weight: 600; color: var(--primary);
+    }
+    .cal-day.other { background: var(--surface-raised); }
+    .cal-day.past  { color: var(--subtle); }
+    .cal-day.today { font-weight: 700; color: var(--primary); }
+
+    /* Bottom sheet preview */
+    .bottom-sheet-preview {
+      background: var(--surface); border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+      border: 1px solid var(--border); border-bottom: none;
+      padding: 20px; max-width: 360px; box-shadow: var(--shadow-md);
+    }
+    .sheet-handle {
+      width: 36px; height: 4px; border-radius: var(--radius-full);
+      background: var(--border); margin: 0 auto 16px;
+    }
+
+    /* Bottom Nav */
+    .bottom-nav-preview {
+      background: var(--surface); border-top: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 10px 16px; max-width: 360px; box-shadow: var(--shadow-sm);
+    }
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 500; color: var(--subtle); cursor: pointer;
+    }
+    .nav-item.active { color: var(--primary); }
+    .nav-icon { font-size: 22px; line-height: 1; }
+
+    /* Member colors */
+    .member-colors { display: flex; flex-wrap: wrap; gap: 8px; }
+    .member-color-chip {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+    }
+    .member-dot { width: 20px; height: 20px; border-radius: var(--radius-full); }
+    .member-chip-label { font-size: 12px; color: var(--muted-fg); }
+
+    /* Divider */
+    .divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+    /* Tag chip */
+    .chip {
+      display: inline-flex; align-items: center; padding: 4px 10px;
+      border-radius: var(--radius-full); font-size: 12px; font-weight: 500;
+      background: var(--surface-raised); color: var(--muted-fg);
+      border: 1px solid var(--border);
+    }
+
+    /* Notification toast preview */
+    .toast {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 14px 16px;
+      box-shadow: var(--shadow-md); max-width: 320px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .toast-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .toast-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .toast-body  { font-size: 13px; color: var(--muted-fg); }
+  </style>
+</head>
+<body>
+
+  <p class="page-title">Le Rond Point</p>
+  <p class="page-subtitle">Design System — v1.0 &nbsp;·&nbsp; Inter &nbsp;·&nbsp; Frais & moderne &nbsp;·&nbsp; Mobile-first</p>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- 1. COULEURS                                                  -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section>
+    <p class="section-title">1 — Couleurs</p>
+
+    <p class="section-title" style="font-size:10px;border:none;margin-bottom:12px;color:var(--subtle);">BRAND</p>
+    <div class="row" style="margin-bottom:32px;">
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--primary-light);"></div>
+        <div class="swatch-label">Primary Light</div>
+        <div class="swatch-hex">#EFF6FF</div>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--primary);"></div>
+        <div class="swatch-label">Primary</div>
+        <div class="swatch-hex">#3B7BF8</div>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--primary-dark);"></div>
+        <div class="swatch-label">Primary Dark</div>
+        <div class="swatch-hex">#1D5FD8</div>
+      </div>
+    </div>
+
+    <p class="section-title" style="font-size:10px;border:none;margin-bottom:12px;color:var(--subtle);">DISPONIBILITÉ</p>
+    <div class="row" style="margin-bottom:32px;">
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--available-light);"></div>
+        <div class="swatch-label">Available Light</div>
+        <div class="swatch-hex">#ECFDF5</div>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--available);"></div>
+        <div class="swatch-label">Available</div>
+        <div class="swatch-hex">#10B981</div>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--busy-light);"></div>
+        <div class="swatch-label">Busy Light</div>
+        <div class="swatch-hex">#FFFBEB</div>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--busy);"></div>
+        <div class="swatch-label">Busy</div>
+        <div class="swatch-hex">#F59E0B</div>
+      </div>
+    </div>
+
+    <p class="section-title" style="font-size:10px;border:none;margin-bottom:12px;color:var(--subtle);">SURFACES & TEXTE</p>
+    <div class="row" style="margin-bottom:32px;">
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--bg); border:1px solid var(--border);"></div>
+        <div class="swatch-label">Background</div>
+        <div class="swatch-hex">#F8FAFF</div>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--surface); border:1px solid var(--border);"></div>
+        <div class="swatch-label">Surface</div>
+        <div class="swatch-hex">#FFFFFF</div>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--surface-raised);"></div>
+        <div class="swatch-label">Surface Raised</div>
+        <div class="swatch-hex">#F1F6FF</div>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--border);"></div>
+        <div class="swatch-label">Border</div>
+        <div class="swatch-hex">#E2E8F0</div>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--subtle);"></div>
+        <div class="swatch-label">Subtle</div>
+        <div class="swatch-hex">#94A3B8</div>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--muted-fg);"></div>
+        <div class="swatch-label">Muted</div>
+        <div class="swatch-hex">#64748B</div>
+      </div>
+      <div class="swatch-group">
+        <div class="swatch" style="background:var(--fg);"></div>
+        <div class="swatch-label">Foreground</div>
+        <div class="swatch-hex">#1E293B</div>
+      </div>
+    </div>
+
+    <p class="section-title" style="font-size:10px;border:none;margin-bottom:12px;color:var(--subtle);">COULEURS MEMBRES (12 couleurs — assignées auto à l'inscription)</p>
+    <div class="member-colors">
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m1)"></div><span class="member-chip-label">#3B7BF8</span></div>
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m2)"></div><span class="member-chip-label">#10B981</span></div>
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m3)"></div><span class="member-chip-label">#8B5CF6</span></div>
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m4)"></div><span class="member-chip-label">#F43F5E</span></div>
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m5)"></div><span class="member-chip-label">#F59E0B</span></div>
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m6)"></div><span class="member-chip-label">#06B6D4</span></div>
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m7)"></div><span class="member-chip-label">#F97316</span></div>
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m8)"></div><span class="member-chip-label">#14B8A6</span></div>
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m9)"></div><span class="member-chip-label">#EC4899</span></div>
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m10)"></div><span class="member-chip-label">#6366F1</span></div>
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m11)"></div><span class="member-chip-label">#84CC16</span></div>
+      <div class="member-color-chip"><div class="member-dot" style="background:var(--m12)"></div><span class="member-chip-label">#0EA5E9</span></div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- 2. TYPOGRAPHIE                                               -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section>
+    <p class="section-title">2 — Typographie &nbsp;·&nbsp; Inter</p>
+    <div class="type-row">
+      <div class="t-display">Le Rond Point</div>
+      <div class="type-meta">Display — 28px / Bold 700 / tracking -0.02em</div>
+    </div>
+    <div class="type-row">
+      <div class="t-h1">Présences en juin</div>
+      <div class="type-meta">Heading 1 — 24px / Bold 700 / tracking -0.015em</div>
+    </div>
+    <div class="type-row">
+      <div class="t-h2">Qui est là en même temps</div>
+      <div class="type-meta">Heading 2 — 20px / Semibold 600 / tracking -0.01em</div>
+    </div>
+    <div class="type-row">
+      <div class="t-h3">Ajouter une présence</div>
+      <div class="type-meta">Heading 3 — 17px / Semibold 600</div>
+    </div>
+    <div class="type-row">
+      <div class="t-body">Je rentre pour les vacances d'été, dispo le soir la plupart du temps.</div>
+      <div class="type-meta">Body — 15px / Regular 400 / line-height 1.6</div>
+    </div>
+    <div class="type-row">
+      <div class="t-body-s">Passage rapide, contact avant de passer</div>
+      <div class="type-meta">Body Strong — 15px / Medium 500</div>
+    </div>
+    <div class="type-row">
+      <div class="t-small">14 juin – 28 juin 2025</div>
+      <div class="type-meta">Small — 13px / Regular 400</div>
+    </div>
+    <div class="type-row">
+      <div class="t-caption">Mis à jour il y a 2 jours</div>
+      <div class="type-meta">Caption — 11px / Medium 500</div>
+    </div>
+    <div class="type-row">
+      <div class="t-label">Disponibilités</div>
+      <div class="type-meta">Label — 11px / Semibold 600 / uppercase / tracking 0.08em</div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- 3. ESPACEMENT                                                -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section>
+    <p class="section-title">3 — Espacement</p>
+    <div class="spacing-row"><div class="spacing-bar" style="width:4px;"></div><div class="spacing-label">1 (4px)</div><div class="spacing-val">Séparateur fin</div></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:8px;"></div><div class="spacing-label">2 (8px)</div><div class="spacing-val">Gap icône–texte, gap badges</div></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:12px;"></div><div class="spacing-label">3 (12px)</div><div class="spacing-val">Gap éléments inline</div></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:16px;"></div><div class="spacing-label">4 (16px)</div><div class="spacing-val">Padding card, gap liste</div></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:20px;"></div><div class="spacing-label">5 (20px)</div><div class="spacing-label">Padding horizontal</div></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:24px;"></div><div class="spacing-label">6 (24px)</div><div class="spacing-val">Padding page, gap sections</div></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:32px;"></div><div class="spacing-label">8 (32px)</div><div class="spacing-val">Gap entre blocs</div></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:48px;"></div><div class="spacing-label">12 (48px)</div><div class="spacing-val">Séparateur de sections</div></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:64px;"></div><div class="spacing-label">16 (64px)</div><div class="spacing-val">Bottom nav height</div></div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- 4. BORDER RADIUS                                             -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section>
+    <p class="section-title">4 — Border Radius</p>
+    <div class="radius-grid">
+      <div class="col" style="align-items:center;">
+        <div class="radius-box" style="border-radius:8px;"></div>
+        <div class="radius-box-label">sm</div>
+        <div class="radius-box-val">8px</div>
+      </div>
+      <div class="col" style="align-items:center;">
+        <div class="radius-box" style="border-radius:12px;"></div>
+        <div class="radius-box-label">md</div>
+        <div class="radius-box-val">12px</div>
+      </div>
+      <div class="col" style="align-items:center;">
+        <div class="radius-box" style="border-radius:16px;"></div>
+        <div class="radius-box-label">lg</div>
+        <div class="radius-box-val">16px</div>
+      </div>
+      <div class="col" style="align-items:center;">
+        <div class="radius-box" style="border-radius:20px;"></div>
+        <div class="radius-box-label">xl</div>
+        <div class="radius-box-val">20px</div>
+      </div>
+      <div class="col" style="align-items:center;">
+        <div class="radius-box" style="border-radius:24px;"></div>
+        <div class="radius-box-label">2xl</div>
+        <div class="radius-box-val">24px</div>
+      </div>
+      <div class="col" style="align-items:center;">
+        <div class="radius-box" style="border-radius:9999px;"></div>
+        <div class="radius-box-label">full</div>
+        <div class="radius-box-val">9999px</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- 5. OMBRES                                                    -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section>
+    <p class="section-title">5 — Ombres</p>
+    <div class="row">
+      <div class="shadow-card" style="box-shadow:0 1px 2px 0 rgb(0 0 0/4%);">shadow-xs</div>
+      <div class="shadow-card" style="box-shadow:var(--shadow-sm);">shadow-sm</div>
+      <div class="shadow-card" style="box-shadow:0 2px 8px 0 rgb(0 0 0/8%),0 1px 3px -1px rgb(0 0 0/4%);">shadow</div>
+      <div class="shadow-card" style="box-shadow:var(--shadow-md);">shadow-md</div>
+      <div class="shadow-card" style="box-shadow:0 8px 24px 0 rgb(0 0 0/10%),0 4px 8px -2px rgb(0 0 0/6%);">shadow-lg</div>
+      <div class="shadow-card" style="box-shadow:var(--shadow-primary); border-top:2px solid var(--primary);">shadow-primary</div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- 6. BOUTONS                                                   -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section>
+    <p class="section-title">6 — Boutons</p>
+    <div class="row" style="align-items:center; margin-bottom:16px;">
+      <button class="btn btn-primary">Ajouter une présence</button>
+      <button class="btn btn-secondary">Modifier</button>
+      <button class="btn btn-ghost">Annuler</button>
+      <button class="btn btn-destructive">Supprimer</button>
+    </div>
+    <div class="row" style="align-items:center;">
+      <button class="btn btn-primary btn-sm">Sauvegarder</button>
+      <button class="btn btn-secondary btn-sm">Voir tout</button>
+      <button class="btn btn-icon">🗓</button>
+      <button class="btn btn-icon">👤</button>
+      <button class="fab">+</button>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- 7. BADGES                                                    -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section>
+    <p class="section-title">7 — Badges</p>
+    <div class="row" style="align-items:center;">
+      <span class="badge badge-available">✦ Ouvert aux retrouvailles</span>
+      <span class="badge badge-busy">◈ Passage rapide</span>
+      <span class="badge-count">3</span>
+      <span class="badge-count">12</span>
+      <span class="chip">Été 2025</span>
+      <span class="chip">Paris</span>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- 8. AVATARS                                                   -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section>
+    <p class="section-title">8 — Avatars</p>
+    <div class="row" style="align-items:center;">
+      <div class="avatar avatar-sm" style="background:var(--m1);">B</div>
+      <div class="avatar avatar-md" style="background:var(--m3);">S</div>
+      <div class="avatar avatar-lg" style="background:var(--m2);">A</div>
+      <div class="avatar avatar-lg" style="background:var(--m4);">L</div>
+      <div class="avatar avatar-lg" style="background:var(--m7);">M</div>
+      <div class="avatar avatar-lg" style="background:var(--m6);">R</div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- 9. INPUTS                                                    -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section>
+    <p class="section-title">9 — Inputs</p>
+    <div class="row">
+      <div class="input-group">
+        <label class="input-label">Date de début</label>
+        <input class="input" type="date" value="2025-07-14" />
+      </div>
+      <div class="input-group">
+        <label class="input-label">Date de fin</label>
+        <input class="input" type="date" value="2025-07-28" />
+      </div>
+      <div class="input-group">
+        <label class="input-label">Note (optionnel)</label>
+        <input class="input" type="text" placeholder="Retour pour l'été, dispo le soir…" />
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- 10. COMPOSANTS APP                                           -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section>
+    <p class="section-title">10 — Composants App</p>
+    <div class="row" style="align-items:flex-end; flex-wrap:wrap;">
+
+      <!-- Carte présence -->
+      <div>
+        <div class="t-label" style="margin-bottom:8px;">Carte présence</div>
+        <div class="presence-card">
+          <div class="presence-card-header">
+            <div class="avatar avatar-md" style="background:var(--m3);">S</div>
+            <div>
+              <div class="presence-card-name">Sophie</div>
+              <div style="font-size:11px;color:var(--subtle);">Marseille</div>
+            </div>
+            <span class="badge badge-available" style="margin-left:auto;">✦ Ouvert</span>
+          </div>
+          <div class="presence-card-dates">📅 14 juil. – 28 juil. 2025</div>
+          <div class="presence-card-note">"Retour pour les vacances, dispo le soir la plupart du temps !"</div>
+        </div>
+      </div>
+
+      <!-- Calendrier -->
+      <div>
+        <div class="t-label" style="margin-bottom:8px;">Calendrier</div>
+        <div class="calendar-preview">
+          <div class="cal-header">
+            <button class="btn btn-icon" style="width:32px;height:32px;font-size:14px;">‹</button>
+            <span class="cal-month">Juillet 2025</span>
+            <button class="btn btn-icon" style="width:32px;height:32px;font-size:14px;">›</button>
+          </div>
+          <div class="cal-grid">
+            <div class="cal-dow">L</div><div class="cal-dow">M</div><div class="cal-dow">M</div>
+            <div class="cal-dow">J</div><div class="cal-dow">V</div><div class="cal-dow">S</div><div class="cal-dow">D</div>
+            <div></div><div class="cal-day">1</div><div class="cal-day">2</div>
+            <div class="cal-day">3</div><div class="cal-day">4</div><div class="cal-day">5</div><div class="cal-day">6</div>
+            <div class="cal-day">7</div><div class="cal-day">8</div><div class="cal-day">9</div>
+            <div class="cal-day">10</div><div class="cal-day">11</div><div class="cal-day">12</div><div class="cal-day">13</div>
+            <div class="cal-day mine">14<span class="badge-count" style="min-width:16px;height:16px;font-size:10px;">2</span></div>
+            <div class="cal-day mine">15<span class="badge-count" style="min-width:16px;height:16px;font-size:10px;">3</span></div>
+            <div class="cal-day mine">16</div>
+            <div class="cal-day mine">17</div>
+            <div class="cal-day mine">18<span class="badge-count" style="min-width:16px;height:16px;font-size:10px;">1</span></div>
+            <div class="cal-day mine">19</div><div class="cal-day mine">20</div>
+            <div class="cal-day other">21<span class="badge-count" style="min-width:16px;height:16px;font-size:10px;">2</span></div>
+            <div class="cal-day">22</div><div class="cal-day">23</div>
+            <div class="cal-day">24</div>
+            <div class="cal-day today">25</div>
+            <div class="cal-day">26</div><div class="cal-day">27</div>
+            <div class="cal-day other">28<span class="badge-count" style="min-width:16px;height:16px;font-size:10px;">4</span></div>
+            <div class="cal-day">29</div><div class="cal-day">30</div><div class="cal-day">31</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom sheet + Bottom nav -->
+    <div class="row" style="margin-top:24px; align-items:flex-end;">
+
+      <!-- Bottom Sheet -->
+      <div>
+        <div class="t-label" style="margin-bottom:8px;">Bottom Sheet (tap sur un jour)</div>
+        <div class="bottom-sheet-preview">
+          <div class="sheet-handle"></div>
+          <div style="font-size:17px;font-weight:600;margin-bottom:4px;">28 juillet 2025</div>
+          <div style="font-size:13px;color:var(--subtle);margin-bottom:16px;">4 personnes présentes</div>
+          <div class="divider"></div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="avatar avatar-sm" style="background:var(--m3);">S</div>
+              <div style="flex:1;"><div style="font-size:14px;font-weight:600;">Sophie</div><div style="font-size:12px;color:var(--subtle);">14 juil. – 28 juil.</div></div>
+              <span class="badge badge-available" style="font-size:11px;padding:2px 8px;">✦ Ouvert</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="avatar avatar-sm" style="background:var(--m7);">M</div>
+              <div style="flex:1;"><div style="font-size:14px;font-weight:600;">Marc</div><div style="font-size:12px;color:var(--subtle);">20 juil. – 3 août</div></div>
+              <span class="badge badge-busy" style="font-size:11px;padding:2px 8px;">◈ Rapide</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Nav -->
+      <div>
+        <div class="t-label" style="margin-bottom:8px;">Bottom Tab Bar</div>
+        <div class="bottom-nav-preview">
+          <div class="nav-item active">
+            <div class="nav-icon">🗓</div>
+            <span>Calendrier</span>
+          </div>
+          <div class="nav-item">
+            <div class="nav-icon">👥</div>
+            <span>Présences</span>
+          </div>
+          <div class="nav-item">
+            <div class="nav-icon">👤</div>
+            <span>Profil</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toast -->
+      <div>
+        <div class="t-label" style="margin-bottom:8px;">Notification / Toast</div>
+        <div class="toast">
+          <div class="toast-icon">🎉</div>
+          <div>
+            <div class="toast-title">Sophie rentre au quartier !</div>
+            <div class="toast-body">Du 14 au 28 juillet — vous serez là en même temps.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</body>
+</html>

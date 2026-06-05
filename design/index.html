@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Le Rond Point — Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* Brand (défauts, surchargés par les tweaks) */
+      --primary:        #3B7BF8;
+      --primary-dark:   #1D5FD8;
+      --primary-light:  #EFF6FF;
+      --ring:           #3B7BF8;
+      /* Disponibilité */
+      --available:      #10B981;
+      --available-light:#ECFDF5;
+      --busy:           #F59E0B;
+      --busy-light:     #FFFBEB;
+      /* Surfaces & texte */
+      --bg:             #F8FAFF;
+      --surface:        #FFFFFF;
+      --surface-raised: #F1F6FF;
+      --fg:             #1E293B;
+      --muted-fg:       #64748B;
+      --subtle:         #94A3B8;
+      --border:         #E2E8F0;
+      --destructive:    #EF4444;
+      /* Radius */
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+      --radius-xl: 20px; --radius-2xl: 24px;
+      /* Shadows */
+      --shadow-sm: 0 1px 4px 0 rgb(0 0 0/6%), 0 1px 2px -1px rgb(0 0 0/4%);
+      --shadow-md: 0 4px 16px 0 rgb(0 0 0/8%), 0 2px 4px -1px rgb(0 0 0/4%);
+      --shadow-primary: 0 4px 16px 0 rgb(59 123 248/28%);
+      --shadow-primary-soft: 0 2px 12px 0 rgb(59 123 248/16%);
+      /* Cards (surchargés par tweaks) */
+      --card-pad: 16px;
+      --card-shadow: var(--shadow-sm);
+      --card-border: 1px solid transparent;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, #EAF1FF 0%, transparent 60%),
+        linear-gradient(180deg, #EEF2F8 0%, #E7ECF3 100%);
+      min-height: 100vh;
+      color: #1E293B;
+    }
+    button { font-family: inherit; }
+    input, textarea { font-family: inherit; }
+    /* date inputs un peu plus iOS */
+    input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
+    ::-webkit-scrollbar { width: 0; height: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- données (JS simple) -->
+  <script src="app-data.js"></script>
+
+  <!-- composants & écrans (JSX) -->
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="app-shared.jsx"></script>
+  <script type="text/babel" src="app-calendar.jsx"></script>
+  <script type="text/babel" src="app-sheets.jsx"></script>
+  <script type="text/babel" src="app-screens.jsx"></script>
+  <script type="text/babel" src="app-auth.jsx"></script>
+  <script type="text/babel" src="app-main.jsx"></script>
+</body>
+</html>
