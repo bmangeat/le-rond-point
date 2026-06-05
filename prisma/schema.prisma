@@ -16,6 +16,7 @@ model User {
   email         String      @unique
   name          String
   image         String?
+  emailVerified DateTime?
   city          String?
   notifEmail    Boolean     @default(true)
   memberColor   Int         @default(1) // 1-12, assigné auto à l'inscription
