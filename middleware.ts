@@ -21,13 +21,8 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  // Protéger /admin — réservé aux admins
-  if (pathname.startsWith("/admin")) {
-    const role = (req.auth?.user as { role?: string })?.role;
-    if (role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-  }
+  // Le contrôle du rôle admin se fait dans /admin (page + API) côté Node, à partir
+  // de la base — le rôle du token JWT peut être périmé (changement de rôle récent).
 
   return NextResponse.next();
 });

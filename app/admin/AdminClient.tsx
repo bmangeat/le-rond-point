@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
+import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
 import { Mail, UserMinus, Clock, ChevronLeft, ChevronRight, Link2, Copy, Check, X, Shield, User } from "lucide-react";
 import Link from "next/link";
 import type { Session } from "next-auth";
@@ -48,6 +49,8 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
 
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [roleBusy, setRoleBusy] = useState(false);
+
+  useLockBodyScroll(!!selectedMember);
 
   async function handleSetRole(member: Member, role: "ADMIN" | "MEMBER") {
     if (member.role === role) return;

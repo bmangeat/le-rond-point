@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { Avatar } from "@/components/shared/Avatar";
 import { AvailabilityBadge } from "@/components/shared/AvailabilityBadge";
 import { formatDateRange } from "@/lib/utils";
+import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
 
 interface DayPresence {
   id: string;
@@ -47,6 +48,7 @@ export function DayDetailSheet({
   onAddPresence,
   onEditPresence,
 }: DayDetailSheetProps) {
+  useLockBodyScroll(true);
   return (
     <>
       <div className="sheet-backdrop animate-fade-in" onClick={onClose} />

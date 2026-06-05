@@ -1,11 +1,11 @@
-import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { getAdminSession } from "@/lib/admin";
 import { AdminClient } from "./AdminClient";
 
 export default async function AdminPage() {
-  const session = await auth();
-  if (!session || session.user.role !== "ADMIN") redirect("/");
+  const session = await getAdminSession();
+  if (!session) redirect("/");
 
   const [members, pendingInvitations] = await Promise.all([
     db.user.findMany({

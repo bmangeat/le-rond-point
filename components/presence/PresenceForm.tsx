@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
 
 interface PresenceFormProps {
   onClose: () => void;
@@ -32,6 +33,8 @@ export function PresenceForm({ onClose, onSuccess, initialData, defaultDate }: P
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useLockBodyScroll(true);
 
   const isEdit = !!initialData;
 

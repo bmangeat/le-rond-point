@@ -1,12 +1,12 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { sendInvitationEmail } from "@/lib/email";
+import { getAdminSession } from "@/lib/admin";
 
 // POST /api/admin/invite — envoyer une invitation
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session || session.user.role !== "ADMIN") {
+  const session = await getAdminSession();
+  if (!session) {
     return NextResponse.json({ error: "Réservé aux admins" }, { status: 403 });
   }
 
