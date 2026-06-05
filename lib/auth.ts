@@ -2,8 +2,22 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { Role } from "@prisma/client";
+
+// Nom du cookie déposé par /invite/[token] pour les liens d'invitation génériques.
+export const INVITE_COOKIE = "invite_token";
+
+// Cherche un lien d'invitation générique (email null) valide à partir du cookie déposé
+// lors de l'ouverture de /invite/[token]. Utilisé pendant le flow OAuth Google.
+async function findLinkInvitation() {
+  const token = cookies().get(INVITE_COOKIE)?.value;
+  if (!token) return null;
+  return db.invitation.findFirst({
+    where: { token, email: null, usedAt: null, expiresAt: { gt: new Date() } },
+  });
+}
 
 const devProvider =
   process.env.NODE_ENV === "development"
@@ -59,8 +73,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return true;
       }
 
-      // Sinon, vérifier une invitation valide
-      const invitation = await db.invitation.findFirst({
+      // Sinon, vérifier une invitation nominative (par email)
+      const emailInvitation = await db.invitation.findFirst({
         where: {
           email: user.email,
           usedAt: null,
@@ -68,11 +82,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
       });
 
-      if (!invitation) {
-        return "/login?error=NotInvited";
-      }
+      if (emailInvitation) return true;
 
-      return true;
+      // Sinon, vérifier un lien d'invitation générique (cookie déposé via /invite/[token])
+      const linkInvitation = await findLinkInvitation();
+      if (linkInvitation) return true;
+
+      return "/login?error=NotInvited";
     },
 
     // Mode JWT (dev) : on charge les infos user dans le token AU LOGIN (runtime Node),
@@ -143,14 +159,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         data: { memberColor: color },
       });
 
-      // Lier l'invitation si elle existe
-      const invitation = await db.invitation.findFirst({
-        where: {
-          email: user.email,
-          usedAt: null,
-          expiresAt: { gt: new Date() },
-        },
-      });
+      // Lier l'invitation (nominative par email, ou lien générique via cookie)
+      const invitation =
+        (await db.invitation.findFirst({
+          where: { email: user.email, usedAt: null, expiresAt: { gt: new Date() } },
+        })) ?? (await findLinkInvitation());
 
       if (invitation) {
         await db.invitation.update({

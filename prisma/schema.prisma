@@ -46,7 +46,7 @@ model Presence {
 
 model Invitation {
   id            String    @id @default(cuid())
-  email         String
+  email         String?   // null = lien d'invitation générique (à usage unique, tout email)
   token         String    @unique @default(cuid())
   expiresAt     DateTime
   usedAt        DateTime?

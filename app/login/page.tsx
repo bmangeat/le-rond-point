@@ -9,6 +9,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   NotInvited: "Ce compte Google n'est pas encore invité. Demande un lien à Brice.",
   AccountDisabled: "Ce compte a été désactivé. Contacte un admin.",
   OAuthSignin: "Erreur lors de la connexion Google. Réessaie.",
+  InvalidToken: "Ce lien d'invitation est invalide.",
+  TokenUsed: "Ce lien d'invitation a déjà été utilisé.",
+  TokenExpired: "Ce lien d'invitation a expiré. Demande-en un nouveau.",
   Default: "Une erreur est survenue. Réessaie.",
 };
 

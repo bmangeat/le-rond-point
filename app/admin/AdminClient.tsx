@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
-import { Mail, UserMinus, Clock, ChevronLeft } from "lucide-react";
+import { Mail, UserMinus, Clock, ChevronLeft, Link2, Copy, Check } from "lucide-react";
 import Link from "next/link";
 import type { Session } from "next-auth";
 
@@ -21,7 +21,7 @@ interface Member {
 
 interface Invitation {
   id: string;
-  email: string;
+  email: string | null;
   token: string;
   expiresAt: Date;
   createdAt: Date;
@@ -41,6 +41,35 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+
+  const [generatingLink, setGeneratingLink] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function handleGenerateLink() {
+    setInviteError(null);
+    setInviteLink(null);
+    setCopied(false);
+    setGeneratingLink(true);
+    try {
+      const res = await fetch("/api/admin/invite/link", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setInviteLink(data.url);
+      refresh();
+    } catch (err) {
+      setInviteError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setGeneratingLink(false);
+    }
+  }
+
+  async function handleCopyLink() {
+    if (!inviteLink) return;
+    await navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -110,6 +139,50 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
               </button>
             </div>
           </form>
+
+          {/* Séparateur */}
+          <div className="flex items-center gap-3 py-1">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-2xs text-muted-foreground uppercase tracking-wide">ou</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          {/* Lien partageable à usage unique */}
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={handleGenerateLink}
+              disabled={generatingLink}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface text-foreground font-semibold text-sm hover:bg-muted transition-colors disabled:opacity-60"
+            >
+              <Link2 className="w-4 h-4" />
+              {generatingLink ? "Génération…" : "Générer un lien d'invitation"}
+            </button>
+
+            {inviteLink && (
+              <div className="space-y-2">
+                <p className="text-caption">
+                  Lien à usage unique, valable 7 jours. Partage-le à qui tu veux.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    readOnly
+                    value={inviteLink}
+                    onFocus={e => e.target.select()}
+                    className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-muted text-sm truncate"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="px-3 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm shadow-primary flex items-center gap-1.5"
+                  >
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied ? "Copié" : "Copier"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Invitations en attente */}
@@ -120,10 +193,16 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
               {pendingInvitations.map(inv => (
                 <div key={inv.id} className="card flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    {inv.email ? (
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <Link2 className="w-4 h-4 text-muted-foreground" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-body-strong font-medium truncate">{inv.email}</p>
+                    <p className="text-body-strong font-medium truncate">
+                      {inv.email ?? "Lien d'invitation"}
+                    </p>
                     <p className="text-caption flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       Expire le {new Date(inv.expiresAt).toLocaleDateString("fr-FR")}
