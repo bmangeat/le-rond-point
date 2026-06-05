@@ -9,6 +9,7 @@ import { DayDetailSheet } from "@/components/calendar/DayDetailSheet";
 import { PresenceForm } from "@/components/presence/PresenceForm";
 import { PresenceCard } from "@/components/presence/PresenceCard";
 import { TodayPresenceToggle } from "@/components/presence/TodayPresenceToggle";
+import { PushPrompt } from "@/components/shared/PushPrompt";
 import { Avatar } from "@/components/shared/Avatar";
 import { formatDateRange } from "@/lib/utils";
 import { Plus } from "lucide-react";
@@ -104,6 +105,9 @@ export function HomeClient({ session, presenceDays, presences, myPresencesWithOv
             />
           </Link>
         </div>
+
+        {/* Incitation aux notifications push */}
+        <PushPrompt />
 
         {/* Présence du jour */}
         <TodayPresenceToggle

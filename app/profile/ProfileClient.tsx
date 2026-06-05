@@ -17,6 +17,9 @@ interface ProfileUser {
   city?: string | null;
   notifEmail: boolean;
   notifPush: boolean;
+  notifPushOverlap: boolean;
+  notifPushBirthday: boolean;
+  notifPushPresence: boolean;
   memberColor: number;
   role: "ADMIN" | "MEMBER";
   birthday?: string | Date | null;
@@ -91,6 +94,19 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
   const [pushSupported, setPushSupported] = useState(true);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMsg, setPushMsg] = useState<string | null>(null);
+
+  // Préférences par type (centre de notifications)
+  const [prefOverlap, setPrefOverlap] = useState(user.notifPushOverlap);
+  const [prefBirthday, setPrefBirthday] = useState(user.notifPushBirthday);
+  const [prefPresence, setPrefPresence] = useState(user.notifPushPresence);
+
+  async function updatePref(key: "notifPushOverlap" | "notifPushBirthday" | "notifPushPresence", value: boolean) {
+    await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [key]: value }),
+    });
+  }
 
   useEffect(() => {
     setPushSupported(isPushSupported());
@@ -282,6 +298,26 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
             <p className="text-caption">
               Les notifications push nécessitent d&apos;installer l&apos;app sur ton écran d&apos;accueil.
             </p>
+          )}
+
+          {/* Centre de notifications : types reçus (si push activé) */}
+          {notifPush && (
+            <div className="card space-y-1 pt-2">
+              <p className="text-label mb-1">Je veux être notifié pour :</p>
+              {([
+                { label: "Chevauchements de présences", desc: "Quelqu'un sera là en même temps que toi", on: prefOverlap, set: setPrefOverlap, key: "notifPushOverlap" as const },
+                { label: "Anniversaires", desc: "Le jour de l'anniv d'un membre", on: prefBirthday, set: setPrefBirthday, key: "notifPushBirthday" as const },
+                { label: "Nouvelles présences", desc: "Quand quelqu'un ajoute une présence", on: prefPresence, set: setPrefPresence, key: "notifPushPresence" as const },
+              ]).map(({ label, desc, on, set, key }) => (
+                <div key={key} className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{label}</p>
+                    <p className="text-caption">{desc}</p>
+                  </div>
+                  <Toggle on={on} onChange={() => { const v = !on; set(v); updatePref(key, v); }} />
+                </div>
+              ))}
+            </div>
           )}
         </div>
 

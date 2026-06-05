@@ -26,6 +26,9 @@ model User {
   linkedin      String?
   notifEmail    Boolean     @default(true)
   notifPush     Boolean     @default(false)
+  notifPushOverlap  Boolean @default(true)  // chevauchement de présences
+  notifPushBirthday Boolean @default(true)  // anniversaires
+  notifPushPresence Boolean @default(true)  // nouvelle présence ajoutée
   memberColor   Int         @default(1) // 1-12, assigné auto à l'inscription
   role          Role        @default(MEMBER)
   isActive      Boolean     @default(true) // soft delete

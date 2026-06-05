@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { sendOverlapNotification } from "@/lib/email";
 import { sendPushToUser } from "@/lib/push";
-import { datesOverlap, formatDateRange } from "@/lib/utils";
+import { formatDateRange } from "@/lib/utils";
 
 // GET /api/presences — liste des présences
 export async function GET() {
@@ -49,45 +49,60 @@ export async function POST(req: Request) {
     },
   });
 
-  // Envoyer les notifications de chevauchement (email + push selon les préférences)
+  // Notifications : chevauchement pour ceux qui sont là en même temps, sinon
+  // "nouvelle présence" pour les autres — selon les préférences de chacun.
   try {
-    const overlappingPresences = await db.presence.findMany({
+    const newPresencerName = session.user.name ?? "Quelqu'un";
+    const dateLabel = formatDateRange(start, end);
+
+    // Qui chevauche cette présence ? (la condition SQL = chevauchement de plages)
+    const overlapping = await db.presence.findMany({
       where: {
         userId: { not: session.user.id },
         startDate: { lte: end },
         endDate: { gte: start },
-        user: { isActive: true, OR: [{ notifEmail: true }, { notifPush: true }] },
+        user: { isActive: true },
       },
-      include: {
-        user: { select: { id: true, name: true, email: true, notifEmail: true, notifPush: true } },
+      select: { userId: true },
+    });
+    const overlappingIds = new Set(overlapping.map(p => p.userId));
+
+    // Tous les autres membres actifs à notifier
+    const others = await db.user.findMany({
+      where: { id: { not: session.user.id }, isActive: true },
+      select: {
+        id: true, name: true, email: true,
+        notifEmail: true, notifPush: true, notifPushOverlap: true, notifPushPresence: true,
       },
     });
 
-    const newPresencerName = session.user.name ?? "Quelqu'un";
+    for (const u of others) {
+      const overlaps = overlappingIds.has(u.id);
 
-    // Dédupliquer par userId pour ne notifier qu'une fois par personne
-    const notified = new Set<string>();
-    for (const p of overlappingPresences) {
-      if (notified.has(p.userId)) continue;
-      if (!datesOverlap(start, end, new Date(p.startDate), new Date(p.endDate))) continue;
-      notified.add(p.userId);
-
-      if (p.user.notifEmail) {
-        await sendOverlapNotification({
-          to: p.user.email,
-          recipientName: p.user.name.split(" ")[0],
-          newPresencerName,
-          startDate: start,
-          endDate: end,
-        });
-      }
-
-      if (p.user.notifPush) {
-        await sendPushToUser(p.userId, {
-          title: `${newPresencerName} sera au quartier 🎉`,
-          body: `En même temps que toi : ${formatDateRange(start, end)}.`,
+      if (overlaps) {
+        if (u.notifEmail) {
+          await sendOverlapNotification({
+            to: u.email,
+            recipientName: u.name.split(" ")[0],
+            newPresencerName,
+            startDate: start,
+            endDate: end,
+          });
+        }
+        if (u.notifPush && u.notifPushOverlap) {
+          await sendPushToUser(u.id, {
+            title: `${newPresencerName} sera au quartier 🎉`,
+            body: `En même temps que toi : ${dateLabel}.`,
+            url: "/",
+            tag: `overlap-${session.user.id}`,
+          });
+        }
+      } else if (u.notifPush && u.notifPushPresence) {
+        await sendPushToUser(u.id, {
+          title: `Nouvelle présence`,
+          body: `${newPresencerName} sera au quartier : ${dateLabel}.`,
           url: "/",
-          tag: `overlap-${session.user.id}`,
+          tag: `presence-${session.user.id}`,
         });
       }
     }

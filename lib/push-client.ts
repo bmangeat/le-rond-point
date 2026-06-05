@@ -11,6 +11,18 @@ export function isPushSupported(): boolean {
   );
 }
 
+// Le navigateur a-t-il déjà un abonnement push actif ?
+export async function isSubscribed(): Promise<boolean> {
+  if (!isPushSupported()) return false;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = await reg?.pushManager.getSubscription();
+    return !!sub;
+  } catch {
+    return false;
+  }
+}
+
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
