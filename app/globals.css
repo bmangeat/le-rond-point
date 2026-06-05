@@ -121,9 +121,9 @@
   .bottom-nav {
     @apply fixed bottom-0 left-0 right-0 bg-surface border-t border-border
            flex items-center justify-around px-2 z-30;
-    /* Hauteur = contenu (4rem) + safe-area sous la barre (home indicator iOS) */
-    height: calc(4rem + env(safe-area-inset-bottom));
-    padding-bottom: env(safe-area-inset-bottom);
+    /* Hauteur = contenu (4rem) + marge de base + safe-area (home indicator iOS) */
+    height: calc(4rem + 0.5rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
   }
 
   .fab {

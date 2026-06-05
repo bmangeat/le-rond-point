@@ -89,7 +89,11 @@ export function HomeClient({ session, presenceDays, presences, myPresencesWithOv
       <div className="px-4 pt-6 space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-heading-1">Le Rond Point</h1>
+          <div className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/icon-192.png" alt="Le Rond Point" className="w-9 h-9 rounded-xl shadow-sm" />
+            <h1 className="text-heading-1">Le Rond Point</h1>
+          </div>
           <Avatar
             name={session.user.name ?? ""}
             image={session.user.image}

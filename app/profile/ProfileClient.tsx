@@ -28,7 +28,7 @@ function Toggle({ on, onChange, disabled }: { on: boolean; onChange: () => void;
       className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 disabled:opacity-50 ${on ? "bg-primary" : "bg-border"}`}
     >
       <span
-        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${on ? "translate-x-6" : "translate-x-0.5"}`}
+        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${on ? "translate-x-6" : "translate-x-0"}`}
       />
     </button>
   );
