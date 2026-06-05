@@ -78,6 +78,14 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   /* iOS : les inputs date/heure ont un pseudo-élément interne avec une largeur
      par défaut qui déborde à droite. On neutralise l'apparence native et on
      cale la valeur à gauche pour respecter le padding du champ. */
