@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { getMemberColor } from "@/lib/utils";
+import { isPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
 import { LogOut, Bell, BellRing, MapPin, User, ChevronRight, Shield } from "lucide-react";
 
 interface ProfileUser {
@@ -19,11 +20,12 @@ interface ProfileUser {
   role: "ADMIN" | "MEMBER";
 }
 
-function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
+function Toggle({ on, onChange, disabled }: { on: boolean; onChange: () => void; disabled?: boolean }) {
   return (
     <button
       onClick={onChange}
-      className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${on ? "bg-primary" : "bg-border"}`}
+      disabled={disabled}
+      className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 disabled:opacity-50 ${on ? "bg-primary" : "bg-border"}`}
     >
       <span
         className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${on ? "translate-x-6" : "translate-x-0.5"}`}
@@ -40,6 +42,38 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
   const [notifPush, setNotifPush] = useState(user.notifPush);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const [pushSupported, setPushSupported] = useState(true);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMsg, setPushMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPushSupported(isPushSupported());
+  }, []);
+
+  async function handlePushToggle() {
+    setPushMsg(null);
+    setPushBusy(true);
+    try {
+      if (!notifPush) {
+        const res = await subscribeToPush();
+        if (res === "subscribed") {
+          setNotifPush(true);
+        } else if (res === "denied") {
+          setPushMsg("Notifications bloquées. Autorise-les dans les réglages de ton navigateur.");
+        } else {
+          setPushMsg("Non supporté ici. Sur iPhone, installe d'abord l'app sur l'écran d'accueil.");
+        }
+      } else {
+        await unsubscribeFromPush();
+        setNotifPush(false);
+      }
+    } catch {
+      setPushMsg("Une erreur est survenue. Réessaie.");
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -144,15 +178,20 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
                 <BellRing className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <p className="text-body-strong font-medium flex items-center gap-1.5">
-                  Notifications push
-                  <span className="text-2xs font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">Bientôt</span>
-                </p>
+                <p className="text-body-strong font-medium">Notifications push</p>
                 <p className="text-caption">Directement sur ton téléphone (app installée)</p>
               </div>
             </div>
-            <Toggle on={notifPush} onChange={() => setNotifPush(v => !v)} />
+            <Toggle on={notifPush} onChange={handlePushToggle} disabled={pushBusy || !pushSupported} />
           </div>
+          {pushMsg && (
+            <p className="text-caption text-destructive bg-destructive/10 rounded-lg px-3 py-2">{pushMsg}</p>
+          )}
+          {!pushSupported && (
+            <p className="text-caption">
+              Les notifications push nécessitent d&apos;installer l&apos;app sur ton écran d&apos;accueil.
+            </p>
+          )}
         </div>
 
         {/* Admin link */}

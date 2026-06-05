@@ -28,10 +28,24 @@ model User {
 
   presences     Presence[]
   invitedBy     Invitation? @relation("InvitedUser")
+  pushSubscriptions PushSubscription[]
 
   // NextAuth adapter fields
   accounts      Account[]
   sessions      Session[]
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Presence {

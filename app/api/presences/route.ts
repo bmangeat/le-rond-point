@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { sendOverlapNotification } from "@/lib/email";
-import { datesOverlap } from "@/lib/utils";
+import { sendPushToUser } from "@/lib/push";
+import { datesOverlap, formatDateRange } from "@/lib/utils";
 
 // GET /api/presences — liste des présences
 export async function GET() {
@@ -48,38 +49,51 @@ export async function POST(req: Request) {
     },
   });
 
-  // Envoyer les notifications de chevauchement
+  // Envoyer les notifications de chevauchement (email + push selon les préférences)
   try {
     const overlappingPresences = await db.presence.findMany({
       where: {
         userId: { not: session.user.id },
         startDate: { lte: end },
         endDate: { gte: start },
-        user: { isActive: true, notifEmail: true },
+        user: { isActive: true, OR: [{ notifEmail: true }, { notifPush: true }] },
       },
       include: {
-        user: { select: { id: true, name: true, email: true, notifEmail: true } },
+        user: { select: { id: true, name: true, email: true, notifEmail: true, notifPush: true } },
       },
     });
 
-    // Dédupliquer par userId pour n'envoyer qu'un email par personne
+    const newPresencerName = session.user.name ?? "Quelqu'un";
+
+    // Dédupliquer par userId pour ne notifier qu'une fois par personne
     const notified = new Set<string>();
     for (const p of overlappingPresences) {
       if (notified.has(p.userId)) continue;
       if (!datesOverlap(start, end, new Date(p.startDate), new Date(p.endDate))) continue;
       notified.add(p.userId);
 
-      await sendOverlapNotification({
-        to: p.user.email,
-        recipientName: p.user.name.split(" ")[0],
-        newPresencerName: session.user.name ?? "Quelqu'un",
-        startDate: start,
-        endDate: end,
-      });
+      if (p.user.notifEmail) {
+        await sendOverlapNotification({
+          to: p.user.email,
+          recipientName: p.user.name.split(" ")[0],
+          newPresencerName,
+          startDate: start,
+          endDate: end,
+        });
+      }
+
+      if (p.user.notifPush) {
+        await sendPushToUser(p.userId, {
+          title: `${newPresencerName} sera au quartier 🎉`,
+          body: `En même temps que toi : ${formatDateRange(start, end)}.`,
+          url: "/",
+          tag: `overlap-${session.user.id}`,
+        });
+      }
     }
   } catch (err) {
     console.error("Erreur envoi notifications:", err);
-    // Ne pas bloquer la réponse si les emails échouent
+    // Ne pas bloquer la réponse si les notifications échouent
   }
 
   return NextResponse.json(presence, { status: 201 });
