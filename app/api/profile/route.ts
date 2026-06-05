@@ -7,7 +7,7 @@ export async function PATCH(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
-  const { name, city, notifEmail } = await req.json();
+  const { name, city, notifEmail, notifPush } = await req.json();
 
   const updated = await db.user.update({
     where: { id: session.user.id },
@@ -15,8 +15,9 @@ export async function PATCH(req: Request) {
       ...(name && { name }),
       city: city ?? null,
       ...(typeof notifEmail === "boolean" && { notifEmail }),
+      ...(typeof notifPush === "boolean" && { notifPush }),
     },
-    select: { id: true, name: true, city: true, notifEmail: true },
+    select: { id: true, name: true, city: true, notifEmail: true, notifPush: true },
   });
 
   return NextResponse.json(updated);

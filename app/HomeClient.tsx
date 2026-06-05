@@ -7,6 +7,7 @@ import { MonthCalendar } from "@/components/calendar/MonthCalendar";
 import { DayDetailSheet } from "@/components/calendar/DayDetailSheet";
 import { PresenceForm } from "@/components/presence/PresenceForm";
 import { PresenceCard } from "@/components/presence/PresenceCard";
+import { TodayPresenceToggle } from "@/components/presence/TodayPresenceToggle";
 import { Avatar } from "@/components/shared/Avatar";
 import { formatDateRange } from "@/lib/utils";
 import { Plus } from "lucide-react";
@@ -39,9 +40,11 @@ interface HomeClientProps {
       user: { id: string; name: string; image?: string | null; memberColor: number };
     }>;
   }>;
+  isPresentToday: boolean;
+  isSingleDayToday: boolean;
 }
 
-export function HomeClient({ session, presenceDays, presences, myPresencesWithOverlaps }: HomeClientProps) {
+export function HomeClient({ session, presenceDays, presences, myPresencesWithOverlaps, isPresentToday, isSingleDayToday }: HomeClientProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -94,6 +97,12 @@ export function HomeClient({ session, presenceDays, presences, myPresencesWithOv
             size="md"
           />
         </div>
+
+        {/* Présence du jour */}
+        <TodayPresenceToggle
+          isPresentToday={isPresentToday}
+          isSingleDayToday={isSingleDayToday}
+        />
 
         {/* Calendrier */}
         <MonthCalendar

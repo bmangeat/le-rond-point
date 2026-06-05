@@ -63,3 +63,10 @@ export function datesOverlap(
 ): boolean {
   return start1 <= end2 && end1 >= start2;
 }
+
+// Clé de jour "YYYY-MM-DD" en UTC. Les présences sont stockées à minuit UTC
+// (le <input type="date"> envoie "2026-06-12" → new Date() = minuit UTC).
+// On garde donc tout le mapping calendrier en UTC pour éviter les décalages d'un jour.
+export function dateKeyUTC(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}

@@ -19,6 +19,7 @@ model User {
   emailVerified DateTime?
   city          String?
   notifEmail    Boolean     @default(true)
+  notifPush     Boolean     @default(false)
   memberColor   Int         @default(1) // 1-12, assigné auto à l'inscription
   role          Role        @default(MEMBER)
   isActive      Boolean     @default(true) // soft delete

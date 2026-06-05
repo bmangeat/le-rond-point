@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { dateKeyUTC } from "@/lib/utils";
 import { HomeClient } from "./HomeClient";
 
 export default async function HomePage() {
@@ -38,13 +39,11 @@ export default async function HomePage() {
   }>();
 
   for (const p of presences) {
-    const start = new Date(p.startDate);
     const end = new Date(p.endDate);
-    const current = new Date(start);
-    current.setHours(0, 0, 0, 0);
+    const current = new Date(p.startDate);
 
     while (current <= end) {
-      const dateStr = current.toISOString().split("T")[0];
+      const dateStr = dateKeyUTC(current);
       const existing = presenceDaysMap.get(dateStr) ?? { count: 0, isMine: false, users: [] };
       existing.count++;
       if (p.userId === session.user.id) existing.isMine = true;
@@ -52,7 +51,7 @@ export default async function HomePage() {
         existing.users.push({ id: p.user.id, name: p.user.name, memberColor: p.user.memberColor });
       }
       presenceDaysMap.set(dateStr, existing);
-      current.setDate(current.getDate() + 1);
+      current.setUTCDate(current.getUTCDate() + 1);
     }
   }
 
@@ -61,8 +60,21 @@ export default async function HomePage() {
     ...data,
   }));
 
-  // Mes prochaines présences avec les chevauchements
+  // Statut "présent aujourd'hui" — bornes en UTC (présences stockées à minuit UTC)
+  const now = new Date();
+  const todayStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
+  const todayEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+
   const myPresences = presences.filter(p => p.userId === session.user.id);
+
+  const isPresentToday = myPresences.some(
+    p => new Date(p.startDate) <= todayEnd && new Date(p.endDate) >= todayStart
+  );
+  const isSingleDayToday = myPresences.some(
+    p => new Date(p.startDate) >= todayStart && new Date(p.endDate) <= todayEnd
+  );
+
+  // Mes prochaines présences avec les chevauchements
   const myPresencesWithOverlaps = myPresences.map(mp => ({
     ...mp,
     overlaps: presences.filter(
@@ -78,6 +90,8 @@ export default async function HomePage() {
       presenceDays={presenceDays}
       presences={presences}
       myPresencesWithOverlaps={myPresencesWithOverlaps}
+      isPresentToday={isPresentToday}
+      isSingleDayToday={isSingleDayToday}
     />
   );
 }

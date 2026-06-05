@@ -4,7 +4,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Le Rond Point",
   description: "Qui sera au quartier et quand ?",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

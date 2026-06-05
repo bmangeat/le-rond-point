@@ -44,7 +44,7 @@ export function MonthCalendar({ presenceDays, onDayClick }: MonthCalendarProps) 
     else setMonth(m => m + 1);
   };
 
-  const todayStr = today.toISOString().split("T")[0];
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   const cells: (number | null)[] = [
     ...Array(startDow).fill(null),
