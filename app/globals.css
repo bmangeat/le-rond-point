@@ -77,6 +77,20 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
+  /* iOS : les inputs date/heure ont un pseudo-élément interne avec une largeur
+     par défaut qui déborde à droite. On neutralise l'apparence native et on
+     cale la valeur à gauche pour respecter le padding du champ. */
+  input[type="date"],
+  input[type="time"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+  }
+  input[type="date"]::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
 }
 
 /* ─── Typography Classes ──────────────────────────────────────────────────── */
@@ -132,7 +146,7 @@
            flex items-center justify-center
            text-white text-2xl font-light
            active:scale-95 transition-transform;
-    bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    bottom: calc(5.5rem + env(safe-area-inset-bottom));
   }
 
   .badge-available {

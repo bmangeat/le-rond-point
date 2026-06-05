@@ -6,7 +6,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { getMemberColor } from "@/lib/utils";
 import { isPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
-import { LogOut, Bell, BellRing, MapPin, User, ChevronRight, Shield } from "lucide-react";
+import { LogOut, BellRing, MapPin, User, ChevronRight, Shield } from "lucide-react";
 
 interface ProfileUser {
   id: string;
@@ -156,20 +156,6 @@ export function ProfileClient({ user }: { user: ProfileUser }) {
           <p className="text-caption -mt-1">
             Quand quelqu&apos;un sera au quartier en même temps que toi.
           </p>
-
-          {/* Email */}
-          <div className="card flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Bell className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-body-strong font-medium">Par email</p>
-                <p className="text-caption">Un email à chaque chevauchement</p>
-              </div>
-            </div>
-            <Toggle on={notifEmail} onChange={() => setNotifEmail(v => !v)} />
-          </div>
 
           {/* Push */}
           <div className="card flex items-center justify-between gap-3">

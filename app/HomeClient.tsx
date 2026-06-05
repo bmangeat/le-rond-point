@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { MonthCalendar } from "@/components/calendar/MonthCalendar";
 import { DayDetailSheet } from "@/components/calendar/DayDetailSheet";
@@ -94,12 +95,14 @@ export function HomeClient({ session, presenceDays, presences, myPresencesWithOv
             <img src="/icons/icon-192.png" alt="Le Rond Point" className="w-9 h-9 rounded-xl shadow-sm" />
             <h1 className="text-heading-1">Le Rond Point</h1>
           </div>
-          <Avatar
-            name={session.user.name ?? ""}
-            image={session.user.image}
-            memberColor={session.user.memberColor}
-            size="md"
-          />
+          <Link href="/profile" aria-label="Mon profil">
+            <Avatar
+              name={session.user.name ?? ""}
+              image={session.user.image}
+              memberColor={session.user.memberColor}
+              size="md"
+            />
+          </Link>
         </div>
 
         {/* Présence du jour */}

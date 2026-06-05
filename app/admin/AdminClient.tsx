@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
-import { Mail, UserMinus, Clock, ChevronLeft, Link2, Copy, Check } from "lucide-react";
+import { Mail, UserMinus, Clock, ChevronLeft, ChevronRight, Link2, Copy, Check, X, Shield, User } from "lucide-react";
 import Link from "next/link";
 import type { Session } from "next-auth";
 
@@ -45,6 +45,31 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
   const [generatingLink, setGeneratingLink] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [roleBusy, setRoleBusy] = useState(false);
+
+  async function handleSetRole(member: Member, role: "ADMIN" | "MEMBER") {
+    if (member.role === role) return;
+    setRoleBusy(true);
+    try {
+      const res = await fetch(`/api/admin/members/${member.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+      setSelectedMember({ ...member, role });
+      refresh();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setRoleBusy(false);
+    }
+  }
 
   async function handleGenerateLink() {
     setInviteError(null);
@@ -97,6 +122,7 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
   async function handleRemoveMember(id: string, name: string) {
     if (!confirm(`Retirer ${name} du groupe ? Ses présences passées seront conservées.`)) return;
     await fetch(`/api/admin/members/${id}`, { method: "DELETE" });
+    setSelectedMember(null);
     refresh();
   }
 
@@ -219,7 +245,11 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
           <h2 className="text-label mb-3">Membres ({members.length})</h2>
           <div className="space-y-2">
             {members.map(m => (
-              <div key={m.id} className="card flex items-center gap-3">
+              <button
+                key={m.id}
+                onClick={() => setSelectedMember(m)}
+                className="w-full card flex items-center gap-3 text-left hover:bg-muted transition-colors"
+              >
                 <Avatar name={m.name} image={m.image} memberColor={m.memberColor} size="md" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -231,19 +261,83 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
                   <p className="text-caption truncate">{m.email}</p>
                   {m.city && <p className="text-caption">{m.city}</p>}
                 </div>
-                {m.id !== session.user.id && m.role !== "ADMIN" && (
-                  <button
-                    onClick={() => handleRemoveMember(m.id, m.name)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
-                  >
-                    <UserMinus className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              </button>
             ))}
           </div>
         </div>
       </div>
+
+      {/* Fiche de gestion d'un membre */}
+      {selectedMember && (
+        <>
+          <div className="sheet-backdrop animate-fade-in" onClick={() => setSelectedMember(null)} />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-surface rounded-t-3xl shadow-xl animate-slide-up safe-bottom">
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-10 h-1 rounded-full bg-border" />
+            </div>
+
+            <div className="px-5 pb-8 space-y-5">
+              {/* En-tête membre */}
+              <div className="flex items-center gap-3">
+                <Avatar name={selectedMember.name} image={selectedMember.image} memberColor={selectedMember.memberColor} size="lg" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-heading-2">{selectedMember.name}</p>
+                  <p className="text-caption truncate">{selectedMember.email}</p>
+                  {selectedMember.city && <p className="text-caption">{selectedMember.city}</p>}
+                </div>
+                <button
+                  onClick={() => setSelectedMember(null)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors flex-shrink-0"
+                >
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+
+              {/* Rôle */}
+              <div>
+                <h3 className="text-label mb-2">Rôle</h3>
+                {selectedMember.id === session.user.id ? (
+                  <p className="text-caption">Tu ne peux pas modifier ton propre rôle.</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { value: "MEMBER", label: "Membre", Icon: User },
+                      { value: "ADMIN", label: "Admin", Icon: Shield },
+                    ] as const).map(({ value, label, Icon }) => {
+                      const active = selectedMember.role === value;
+                      return (
+                        <button
+                          key={value}
+                          disabled={roleBusy}
+                          onClick={() => handleSetRole(selectedMember, value)}
+                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all disabled:opacity-60 ${
+                            active ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-border/80"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Retirer du groupe */}
+              {selectedMember.id !== session.user.id && selectedMember.role !== "ADMIN" && (
+                <button
+                  onClick={() => handleRemoveMember(selectedMember.id, selectedMember.name)}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-destructive bg-destructive/10 font-semibold text-sm hover:bg-destructive/15 transition-colors"
+                >
+                  <UserMinus className="w-4 h-4" />
+                  Retirer du groupe
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </AppShell>
   );
 }
