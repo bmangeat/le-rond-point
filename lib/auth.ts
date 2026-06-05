@@ -26,7 +26,9 @@ const devProvider =
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
-  session: { strategy: process.env.NODE_ENV === "development" ? "jwt" : "database" },
+  // Sessions JWT partout : indispensable pour que le middleware tourne en Edge Runtime
+  // (Prisma n'y est pas supporté). L'adapter reste utilisé pour persister users/comptes.
+  session: { strategy: "jwt" },
   providers: [
     ...devProvider,
     Google({
