@@ -224,8 +224,8 @@ function ParticipantsTab({ event, accent, me, myStatus, statusOf, members, membe
       {/* Zone action perso */}
       {myStatus === "PENDING" ? (
         <div className="flex gap-2.5 my-4">
-          <button onClick={sayYes} disabled={busy} className="flex-1 py-3.5 rounded-2xl text-white font-bold text-[15.5px] flex items-center justify-center gap-2 disabled:opacity-60"
-            style={{ background: "#10B981", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}>👍 Je viens</button>
+          <button onClick={sayYes} disabled={busy} className="flex-1 py-3.5 rounded-2xl font-bold text-[15.5px] bg-surface border-[1.5px] flex items-center justify-center gap-2 disabled:opacity-60"
+            style={{ color: "#10B981", borderColor: "#10B981" }}>👍 Je viens</button>
           <button onClick={() => setAlsace(true)} disabled={busy} className="flex-1 py-3.5 rounded-2xl font-bold text-[15.5px] text-muted-foreground bg-surface border-[1.5px] border-border flex items-center justify-center gap-2">👎 Sans moi</button>
         </div>
       ) : (
