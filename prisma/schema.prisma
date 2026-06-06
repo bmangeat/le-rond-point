@@ -45,6 +45,7 @@ model User {
   eventNeeds    EventNeed[]    @relation("NeedClaim")
   eventExpenses EventExpense[] @relation("ExpensePayer")
   eventComments EventComment[]
+  eventPhotos   EventPhoto[]   @relation("PhotoUploader")
 
   // NextAuth adapter fields
   accounts      Account[]
@@ -74,8 +75,22 @@ model Event {
   needs    EventNeed[]
   expenses EventExpense[]
   comments EventComment[]
+  photos   EventPhoto[]
 
   @@index([whenAt])
+}
+
+model EventPhoto {
+  id         String   @id @default(cuid())
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  uploaderId String
+  uploader   User     @relation("PhotoUploader", fields: [uploaderId], references: [id], onDelete: Cascade)
+  url        String
+  createdAt  DateTime @default(now())
+
+  @@index([eventId])
+  @@index([createdAt])
 }
 
 model EventRsvp {

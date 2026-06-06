@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { sendPushToUser } from "@/lib/push";
+import { del } from "@vercel/blob";
 
 const firstName = (n: string) => n.split(" ")[0];
 
@@ -94,4 +95,22 @@ export async function runPresenceReminders() {
     sent++;
   }
   return { present: people.length, sent };
+}
+
+// Auto-destruction des photos de sortie après 7 jours (suppression Blob + DB).
+export async function runEventPhotoCleanup() {
+  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const old = await db.eventPhoto.findMany({
+    where: { createdAt: { lt: cutoff } },
+    select: { id: true, url: true },
+  });
+  if (old.length === 0) return { deleted: 0 };
+
+  try {
+    await del(old.map(p => p.url));
+  } catch (err) {
+    console.error("Erreur suppression Blob photos:", err);
+  }
+  await db.eventPhoto.deleteMany({ where: { id: { in: old.map(p => p.id) } } });
+  return { deleted: old.length };
 }

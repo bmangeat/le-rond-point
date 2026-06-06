@@ -2,10 +2,11 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { upload } from "@vercel/blob/client";
 import { Avatar } from "@/components/shared/Avatar";
 import { EventGlyph } from "@/components/events/EventGlyph";
 import { eventType, fmtEventWhen, rsvpCounts, tricountBalances, fmtMoney, mapsUrl, RsvpStatus } from "@/lib/events";
-import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera } from "lucide-react";
+import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera, Loader2 } from "lucide-react";
 
 interface Member { id: string; name: string; image?: string | null; memberColor: number; city?: string | null }
 interface EventData {
@@ -16,6 +17,7 @@ interface EventData {
   needs: { id: string; label: string; claimedById: string | null }[];
   expenses: { id: string; payerId: string; label: string; amount: number; forUserIds: string[] }[];
   comments: { id: string; authorId: string; text: string; createdAt: string }[];
+  photos: { id: string; uploaderId: string; url: string; createdAt: string }[];
 }
 
 type Tab = "people" | "logistics" | "life";
@@ -77,6 +79,9 @@ export function EventDetailClient({ event, members, currentUserId }: { event: Ev
         const url = ((payload.url as string) || "").trim() || null;
         setEv(e => ({ ...e, playlistUrl: url, hasPlaylist: !!url }));
         await post(payload);
+      } else if (a === "addPhoto") {
+        const { photo } = await post(payload);
+        setEv(e => ({ ...e, photos: [{ id: photo.id, uploaderId: photo.uploaderId, url: photo.url, createdAt: photo.createdAt }, ...e.photos] }));
       }
     } catch (e) {
       alert(e instanceof Error ? e.message : "Erreur");
@@ -453,6 +458,7 @@ function LifeTab({ event, accent, me, memberMap, busy, action }: {
 }) {
   const [msg, setMsg] = useState("");
   const [plInput, setPlInput] = useState("");
+  const [uploading, setUploading] = useState(false);
   const isHost = event.hostId === me;
   const canPlaylist = eventType(event.type).logistics === "list"; // soirée / sortie
 
@@ -461,6 +467,25 @@ function LifeTab({ event, accent, me, memberMap, busy, action }: {
     if (!t) return;
     action({ action: "addComment", text: t });
     setMsg("");
+  }
+
+  async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const blob = await upload(`events/${event.id}/${Date.now()}.${ext}`, file, {
+        access: "public",
+        handleUploadUrl: `/api/events/${event.id}/photo`,
+      });
+      await action({ action: "addPhoto", url: blob.url });
+    } catch {
+      alert("Échec de l'envoi de la photo. Réessaie.");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
   }
 
   return (
@@ -491,14 +516,30 @@ function LifeTab({ event, accent, me, memberMap, busy, action }: {
         </div>
       ) : null}
 
-      {/* Photos (à venir) */}
+      {/* Photos */}
       <div className="flex items-baseline justify-between mb-2 px-0.5">
         <div className="text-[15px] font-bold">Photos</div>
-        <div className="text-[11.5px] text-busy font-semibold">⏳ Suppr. dans 7 jours</div>
+        <div className="text-[11.5px] text-busy font-semibold whitespace-nowrap">⏳ Suppr. dans 7 jours</div>
       </div>
-      <div className="rounded-2xl border-[1.5px] border-dashed border-border bg-surface-raised/50 py-6 text-center mb-5">
-        <Camera className="w-6 h-6 mx-auto text-muted-foreground" />
-        <p className="text-caption mt-1.5">Le partage de photos arrive bientôt 📸</p>
+      <div className="grid grid-cols-3 gap-2 mb-5">
+        <label className="aspect-square rounded-xl border-[1.5px] border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer"
+          style={{ borderColor: `${accent}80`, background: `${accent}0f`, color: accent }}>
+          {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+          <span className="text-[11px] font-semibold">{uploading ? "Envoi…" : "Ajouter"}</span>
+          <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} disabled={uploading} />
+        </label>
+        {event.photos.map(p => {
+          const m = memberMap.get(p.uploaderId);
+          return (
+            <div key={p.id} className="relative aspect-square rounded-xl overflow-hidden bg-surface-raised">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.url} alt="" className="w-full h-full object-cover" />
+              <div className="absolute left-1 bottom-1 ring-2 ring-white/80 rounded-full">
+                <Avatar name={m?.name ?? "?"} image={m?.image} memberColor={m?.memberColor ?? 1} size="sm" />
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Discussion */}

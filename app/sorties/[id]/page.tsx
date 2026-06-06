@@ -15,6 +15,7 @@ export default async function EventPage({ params }: { params: { id: string } }) 
         needs: { select: { id: true, label: true, claimedById: true }, orderBy: { createdAt: "asc" } },
         expenses: { select: { id: true, payerId: true, label: true, amount: true, forUserIds: true }, orderBy: { createdAt: "asc" } },
         comments: { select: { id: true, authorId: true, text: true, createdAt: true }, orderBy: { createdAt: "asc" } },
+        photos: { select: { id: true, uploaderId: true, url: true, createdAt: true }, orderBy: { createdAt: "desc" } },
       },
     }),
     db.user.findMany({

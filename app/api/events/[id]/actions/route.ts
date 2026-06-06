@@ -75,6 +75,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ ok: true, comment });
     }
 
+    case "addPhoto": {
+      const url = (body.url as string)?.trim();
+      if (!url) return NextResponse.json({ error: "URL manquante" }, { status: 400 });
+      const photo = await db.eventPhoto.create({ data: { eventId, uploaderId: me, url } });
+      return NextResponse.json({ ok: true, photo });
+    }
+
     default:
       return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
   }
