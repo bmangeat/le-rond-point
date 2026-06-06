@@ -54,7 +54,7 @@ export function PushPrompt() {
   if (!show) return null;
 
   return (
-    <div className="card flex items-center gap-3 border-primary/30 bg-primary/5">
+    <div className="card flex items-center gap-3 border-primary/30 bg-primary/5 mb-4">
       <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
         <Bell className="w-5 h-5 text-primary" />
       </div>
