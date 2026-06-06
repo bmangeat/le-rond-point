@@ -73,6 +73,10 @@ export function EventDetailClient({ event, members, currentUserId }: { event: Ev
       } else if (a === "addComment") {
         const { comment } = await post(payload);
         setEv(e => ({ ...e, comments: [...e.comments, { id: comment.id, authorId: comment.authorId, text: comment.text, createdAt: comment.createdAt }] }));
+      } else if (a === "setPlaylist") {
+        const url = ((payload.url as string) || "").trim() || null;
+        setEv(e => ({ ...e, playlistUrl: url, hasPlaylist: !!url }));
+        await post(payload);
       }
     } catch (e) {
       alert(e instanceof Error ? e.message : "Erreur");
@@ -448,6 +452,9 @@ function LifeTab({ event, accent, me, memberMap, busy, action }: {
   event: EventData; accent: string; me: string; memberMap: Map<string, Member>; busy: boolean; action: (p: Record<string, unknown>) => Promise<void>;
 }) {
   const [msg, setMsg] = useState("");
+  const [plInput, setPlInput] = useState("");
+  const isHost = event.hostId === me;
+  const canPlaylist = eventType(event.type).logistics === "list"; // soirée / sortie
 
   function send() {
     const t = msg.trim();
@@ -458,18 +465,31 @@ function LifeTab({ event, accent, me, memberMap, busy, action }: {
 
   return (
     <div className="mt-1">
-      {/* Playlist */}
-      {event.hasPlaylist && (
-        <a href={event.playlistUrl || "https://open.spotify.com"} target="_blank" rel="noopener noreferrer"
+      {/* Playlist : affichée seulement si un lien a été ajouté ; sinon l'hôte peut en ajouter un */}
+      {event.playlistUrl ? (
+        <a href={event.playlistUrl} target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-3 bg-surface rounded-2xl border border-border px-3.5 py-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-[#1DB954] flex items-center justify-center flex-shrink-0"><Music2 className="w-5 h-5 text-white" /></div>
           <div className="flex-1 min-w-0">
-            <div className="text-[15px] font-semibold">Musique de la soirée</div>
-            <div className="text-caption">Ajoutez vos sons à la playlist commune</div>
+            <div className="text-[15px] font-semibold">Playlist de la soirée</div>
+            <div className="text-caption truncate">Ajoutez vos sons à la playlist commune</div>
           </div>
           <span className="flex-shrink-0 px-3.5 py-2 rounded-full text-white text-[13px] font-bold bg-[#1DB954]">Ouvrir</span>
         </a>
-      )}
+      ) : canPlaylist && isHost ? (
+        <div className="bg-surface rounded-2xl border border-border px-3.5 py-3 mb-4">
+          <div className="flex items-center gap-2 mb-2.5">
+            <Music2 className="w-4 h-4 text-[#1DB954]" />
+            <span className="text-[14px] font-semibold">Ajouter une playlist collaborative</span>
+          </div>
+          <div className="flex gap-2">
+            <input className="flex-1 min-w-0 box-border px-3 py-2.5 rounded-xl border-[1.5px] border-border bg-surface text-[14px] outline-none focus:border-primary"
+              type="url" inputMode="url" value={plInput} onChange={e => setPlInput(e.target.value)} placeholder="https://open.spotify.com/playlist/…" />
+            <button onClick={() => plInput.trim() && action({ action: "setPlaylist", url: plInput.trim() })} disabled={busy || !plInput.trim()}
+              className="px-3.5 rounded-xl text-white font-semibold text-[14px] flex-shrink-0 disabled:opacity-50" style={{ background: accent }}>OK</button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Photos (à venir) */}
       <div className="flex items-baseline justify-between mb-2 px-0.5">

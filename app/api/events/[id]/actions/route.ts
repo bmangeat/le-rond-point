@@ -8,7 +8,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const eventId = params.id;
-  const event = await db.event.findUnique({ where: { id: eventId }, select: { id: true } });
+  const event = await db.event.findUnique({ where: { id: eventId }, select: { id: true, hostId: true } });
   if (!event) return NextResponse.json({ error: "Sortie introuvable" }, { status: 404 });
 
   const me = session.user.id;
@@ -59,6 +59,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         data: { eventId, payerId: me, label, amount: Math.round(amount * 100) / 100, forUserIds },
       });
       return NextResponse.json({ ok: true, expense });
+    }
+
+    case "setPlaylist": {
+      if (event.hostId !== me) return NextResponse.json({ error: "Réservé à l'organisateur" }, { status: 403 });
+      const url = (body.url as string)?.trim() || null;
+      await db.event.update({ where: { id: eventId }, data: { playlistUrl: url, hasPlaylist: !!url } });
+      return NextResponse.json({ ok: true, playlistUrl: url });
     }
 
     case "addComment": {

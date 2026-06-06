@@ -34,6 +34,7 @@ export function CreateEventClient() {
   const [needs, setNeeds] = useState<string[]>([]);
   const [needInput, setNeedInput] = useState("");
   const [tricount, setTricount] = useState(true);
+  const [playlistUrl, setPlaylistUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,7 +81,8 @@ export function CreateEventClient() {
           placeAddr: place.addr,
           needs: logKind === "list" ? needs : [],
           tricountEnabled: tricount,
-          hasPlaylist: type === "SOIREE" || type === "SORTIE",
+          hasPlaylist: (type === "SOIREE" || type === "SORTIE") && !!playlistUrl.trim(),
+          playlistUrl: playlistUrl.trim() || null,
         }),
       });
       const data = await res.json();
@@ -105,11 +107,11 @@ export function CreateEventClient() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto px-4 pb-32 pt-2">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-32 pt-2">
         {/* Type */}
         <h2 className="text-[17px] font-bold mt-5 mb-1">C&apos;est quoi le plan ?</h2>
         <p className="text-caption mb-3">On adapte la suite selon ce que tu choisis</p>
-        <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-1.5 no-scrollbar">
+        <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pt-2 pb-2 no-scrollbar">
           {EVENT_TYPE_ORDER.map(k => {
             const t = EVENT_TYPES[k];
             const on = type === k;
@@ -244,6 +246,14 @@ export function CreateEventClient() {
                 <span className={`absolute top-[3px] w-6 h-6 rounded-full bg-white shadow transition-all ${tricount ? "left-[23px]" : "left-[3px]"}`} />
               </span>
             </button>
+          </div>
+        )}
+
+        {(type === "SOIREE" || type === "SORTIE") && (
+          <div>
+            <h2 className="text-[17px] font-bold mt-6 mb-1">Playlist</h2>
+            <p className="text-caption mb-3">Un lien vers une playlist collaborative (Spotify, Deezer…). Optionnel.</p>
+            <input className={inputCls} type="url" inputMode="url" value={playlistUrl} onChange={e => setPlaylistUrl(e.target.value)} placeholder="https://open.spotify.com/playlist/…" />
           </div>
         )}
 
