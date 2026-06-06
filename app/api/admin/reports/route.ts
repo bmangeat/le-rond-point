@@ -2,6 +2,15 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin";
 
+// GET /api/admin/reports — nombre de commentaires signalés (0 si non-admin).
+// Utilisé pour la pastille de notification (nav + bouton admin).
+export async function GET() {
+  const session = await getAdminSession();
+  if (!session) return NextResponse.json({ count: 0 });
+  const count = await db.eventComment.count({ where: { reports: { some: {} } } });
+  return NextResponse.json({ count });
+}
+
 // POST /api/admin/reports — traiter un commentaire signalé
 //   { commentId, op: "delete" }  → supprime le commentaire (et ses signalements en cascade)
 //   { commentId, op: "dismiss" } → ignore : supprime les signalements, garde le commentaire

@@ -141,7 +141,7 @@ const NOTIF_TYPES = [
   { key: "notifPushEvents", title: "Sorties", desc: "Nouvelles sorties et rappel le jour J" },
 ] as const;
 
-export function ProfileClient({ user, memberCount, invitationCount, signOutAction }: { user: ProfileUser; memberCount: number; invitationCount: number; signOutAction: () => Promise<void> }) {
+export function ProfileClient({ user, memberCount, invitationCount, reportsCount, signOutAction }: { user: ProfileUser; memberCount: number; invitationCount: number; reportsCount: number; signOutAction: () => Promise<void> }) {
   const router = useRouter();
   const color = getMemberColor(user.memberColor);
 
@@ -329,13 +329,20 @@ export function ProfileClient({ user, memberCount, invitationCount, signOutActio
         {/* Administration */}
         {user.role === "ADMIN" && (
           <a href="/admin" className="bg-surface rounded-2xl shadow-sm border border-border flex items-center gap-3 p-4">
-            <div className="w-[38px] h-[38px] rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0 text-primary">
+            <div className="relative w-[38px] h-[38px] rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0 text-primary">
               <Shield className="w-5 h-5" />
+              {reportsCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                  {reportsCount > 9 ? "9+" : reportsCount}
+                </span>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[16px] font-bold leading-tight">Administration</p>
               <p className="text-[13.5px] text-muted-foreground mt-0.5">
-                {memberCount} membre{memberCount > 1 ? "s" : ""} · {invitationCount} invitation{invitationCount > 1 ? "s" : ""}
+                {reportsCount > 0
+                  ? `${reportsCount} commentaire${reportsCount > 1 ? "s" : ""} signalé${reportsCount > 1 ? "s" : ""} à traiter`
+                  : `${memberCount} membre${memberCount > 1 ? "s" : ""} · ${invitationCount} invitation${invitationCount > 1 ? "s" : ""}`}
               </p>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />

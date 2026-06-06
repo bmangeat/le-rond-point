@@ -22,10 +22,12 @@ export default async function ProfilePage() {
   // Compteurs pour la carte Administration (admins)
   let memberCount = 0;
   let invitationCount = 0;
+  let reportsCount = 0;
   if (user.role === "ADMIN") {
-    [memberCount, invitationCount] = await Promise.all([
+    [memberCount, invitationCount, reportsCount] = await Promise.all([
       db.user.count({ where: { isActive: true } }),
       db.invitation.count({ where: { usedAt: null, expiresAt: { gt: new Date() } } }),
+      db.eventComment.count({ where: { reports: { some: {} } } }),
     ]);
   }
 
@@ -39,6 +41,7 @@ export default async function ProfilePage() {
       user={user}
       memberCount={memberCount}
       invitationCount={invitationCount}
+      reportsCount={reportsCount}
       signOutAction={signOutAction}
     />
   );
