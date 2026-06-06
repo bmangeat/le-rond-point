@@ -1,5 +1,59 @@
-// Service worker — réception des notifications push pour Le Rond Point
+// Service worker — Le Rond Point
+// 1) Réception des notifications push
+// 2) Cache des assets statiques immuables → lancements (re)quasi instantanés
 
+const CACHE = "lrp-static-v1";
+
+// On ne met en cache QUE des ressources au nom hashé/immuable. Jamais le HTML,
+// le RSC ou les API (contenu auth-dépendant → risque de servir du périmé).
+function isCacheableStatic(url) {
+  return (
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/icons/") ||
+    url.pathname.startsWith("/splash/") ||
+    url.pathname === "/logo-animated.svg"
+  );
+}
+
+self.addEventListener("install", () => {
+  // Active immédiatement la nouvelle version sans attendre la fermeture des onglets.
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      // Purge les anciens caches.
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+      await self.clients.claim();
+    })()
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin || !isCacheableStatic(url)) return;
+
+  // Cache-first : ces ressources sont immuables (nom hashé).
+  event.respondWith(
+    (async () => {
+      const cached = await caches.match(req);
+      if (cached) return cached;
+      const res = await fetch(req);
+      if (res.ok) {
+        const cache = await caches.open(CACHE);
+        cache.put(req, res.clone());
+      }
+      return res;
+    })()
+  );
+});
+
+// ─── Notifications push ──────────────────────────────────────────────────────
 self.addEventListener("push", (event) => {
   let data = {};
   try {

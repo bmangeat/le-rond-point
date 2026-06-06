@@ -7,40 +7,44 @@ export default async function HomePage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  // Première connexion → onboarding (onboardedAt null)
-  const me = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { onboardedAt: true },
-  });
-  if (me && !me.onboardedAt) redirect("/onboarding");
-
-  // Charger toutes les présences futures + en cours
+  // Bornes de dates (calcul local, pas de coût DB)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  const presences = await db.presence.findMany({
-    where: {
-      endDate: { gte: today },
-      user: { isActive: true },
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          city: true,
-          memberColor: true,
-        },
-      },
-    },
-    orderBy: { startDate: "asc" },
-  });
-
-  // Statut "présent aujourd'hui" — bornes en UTC (présences stockées à minuit UTC)
   const now = new Date();
   const todayStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
   const todayEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+
+  // Les 3 requêtes sont indépendantes → en parallèle pour réduire la latence
+  // cumulée (Neon serverless ajoute un aller-retour par requête séquentielle).
+  const [me, presences, events] = await Promise.all([
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { onboardedAt: true },
+    }),
+    db.presence.findMany({
+      where: {
+        endDate: { gte: today },
+        user: { isActive: true },
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, image: true, city: true, memberColor: true },
+        },
+      },
+      orderBy: { startDate: "asc" },
+    }),
+    db.event.findMany({
+      where: { whenAt: { gte: todayStart } },
+      orderBy: { whenAt: "asc" },
+      select: {
+        id: true, type: true, name: true, whenAt: true, placeName: true,
+        rsvps: { select: { userId: true, status: true } },
+      },
+    }),
+  ]);
+
+  // Première connexion → onboarding (onboardedAt null)
+  if (me && !me.onboardedAt) redirect("/onboarding");
 
   const myPresences = presences.filter(p => p.userId === session.user.id);
 
@@ -60,16 +64,6 @@ export default async function HomePage() {
            new Date(p.endDate) >= new Date(mp.startDate)
     ),
   }));
-
-  // Sorties à venir (strip + pastilles calendrier)
-  const events = await db.event.findMany({
-    where: { whenAt: { gte: todayStart } },
-    orderBy: { whenAt: "asc" },
-    select: {
-      id: true, type: true, name: true, whenAt: true, placeName: true,
-      rsvps: { select: { userId: true, status: true } },
-    },
-  });
 
   return (
     <HomeClient
