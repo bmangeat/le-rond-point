@@ -632,14 +632,15 @@ function LifeTab({ event, accent, me, memberMap, busy, action, isAdmin }: {
                     <span className="text-[13.5px] font-semibold" style={{ color }}>{mine ? "Toi" : m?.name}</span>
                     <span className="text-[11px] text-muted-foreground">{time}</span>
                   </div>
-                  <div
-                    className="text-[14px] rounded-[4px_14px_14px_14px] px-3 py-2 mt-1 leading-relaxed text-foreground flex flex-col gap-1.5"
-                    style={{ background: hexA(color, 0.1), borderLeft: `3px solid ${hexA(color, 0.55)}` }}
-                  >
+                  <div className="flex flex-col gap-1.5 mt-1">
                     {g.texts.map(t => {
                       const canDelete = mine || event.hostId === me || isAdmin;
                       return (
-                        <div key={t.id} className="flex items-start gap-1.5">
+                        <div
+                          key={t.id}
+                          className="text-[14px] rounded-[4px_14px_14px_14px] px-3 py-2 leading-relaxed text-foreground flex items-start gap-1.5"
+                          style={{ background: hexA(color, 0.1), borderLeft: `3px solid ${hexA(color, 0.55)}` }}
+                        >
                           <span className="flex-1 min-w-0 break-words">{t.text}</span>
                           {canDelete ? (
                             <button
