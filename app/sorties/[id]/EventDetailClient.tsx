@@ -172,7 +172,7 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
       <div className="flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {tab === "people" && (
           <ParticipantsTab event={ev} accent={accent} me={me} myStatus={myStatus} statusOf={statusOf}
-            members={members} memberMap={memberMap} busy={busy} action={action} goLogistics={() => setTab("logistics")} />
+            members={members} memberMap={memberMap} busy={busy} action={action} />
         )}
         {tab === "logistics" && (
           ty.logistics === "tricount"
@@ -186,15 +186,15 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
 }
 
 // ── Onglet 1 : participants ──
-function ParticipantsTab({ event, accent, me, myStatus, statusOf, members, memberMap, busy, action, goLogistics }: {
+function ParticipantsTab({ event, accent, me, myStatus, statusOf, members, memberMap, busy, action }: {
   event: EventData; accent: string; me: string; myStatus: RsvpStatus; statusOf: (id: string) => RsvpStatus;
-  members: Member[]; memberMap: Map<string, Member>; busy: boolean; action: (p: Record<string, unknown>) => Promise<void>; goLogistics: () => void;
+  members: Member[]; memberMap: Map<string, Member>; busy: boolean; action: (p: Record<string, unknown>) => Promise<void>;
 }) {
   const [alsace, setAlsace] = useState(false);
   const counts = rsvpCounts(members.map(m => ({ status: statusOf(m.id) })));
 
   async function setStatus(s: RsvpStatus) { await action({ action: "rsvp", status: s }); }
-  async function sayYes() { await setStatus("YES"); setTimeout(goLogistics, 250); }
+  async function sayYes() { await setStatus("YES"); }
 
   const groups: { key: RsvpStatus; label: string; color: string }[] = [
     { key: "YES", label: "Présents", color: "#10B981" },
