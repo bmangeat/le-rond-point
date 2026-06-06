@@ -4,9 +4,38 @@
 
 // Liste minimale d'insultes/termes haineux (fr + en). À étoffer au besoin.
 const BLOCKLIST = [
-  "connard", "connasse", "salope", "salaud", "enculé", "encule", "pute", "putain",
-  "ntm", "fdp", "pd", "tapette", "bougnoule", "negro", "nègre", "youpin", "pédé",
-  "pede", "fuck", "nigger", "faggot", "cunt", "bitch", "retard",
+  // --- TA LISTE D'ORIGINE (SANS ACCENTS) ---
+  "connard", "connasse", "salope", "salaud", "encule", "pute", "putain",
+  "ntm", "fdp", "pd", "tapette", "bougnoule", "negro", "negre", "youpin", "pede",
+  "fuck", "nigger", "faggot", "cunt", "bitch", "retard",
+
+  // --- VULGARITES & INSULTES (FR) ---
+  "abruti", "abrutie", "andouille", "asocial", "baise", "baisable", "baiser", 
+  "bander", "batard", "branleur", "branleuse", "chieur", "chieuse", "clochard", 
+  "con", "conard", "conne", "connardes", "couille", "couilles", "crevard",
+  "ducon", "emmerdeur", "emmerdeuse", "enfoire", 
+  "foireux", "grogniasse", "groslard", "imbecile", "merde", "merdeux", 
+  "merdeuse", "nique", "niquer", "petasse", "poufiasse", "ptn", "put1", 
+  "sacamerde", "salopard", "salopperie", "tocard", "trouduc", "trouducul",
+
+  // --- DISCRIMINATION & HAINE (FR) ---
+  "bicot", "bougnoul", "cacouac", "chinetoc", "chinetoque", "feuj", "gogol", 
+  "gogole", "goudou", "mongol", "negresse", "niackoue", "niakoue", "pedale",
+  "tarouse",
+
+  // --- ANATOMIE & SEXUALITE (FR) ---
+  "anus", "bite", "chatte", "clito", "clitoris", "coit", "cul", "ejaculation", 
+  "fellation", "fesse", "fesses", "gode", "godemichet", "orgasme", "penetration", 
+  "penis", "sperme", "testicule", "turlutte", "vagin", "verge", "vulve",
+
+  // --- INSULTES & VULGARITES (EN) ---
+  "anal", "arse", "arsehole", "ass", "asshole", "bastard", "blowjob", "boob", 
+  "boobs", "bugger", "clit", "cock", "coon", "crap", "cum", "dick", 
+  "dickhead", "dildo", "dyke", "feck", "felatio", "flange", "fuckface", 
+  "fudgepacker", "goddamn", "gook", "goy", "hell", "homo", "jerk", "jizz", 
+  "knob", "labia", "motherfucker", "muff", "paki", "piss", "poof", "prick", 
+  "pussy", "scrotum", "shag", "shagging", "shit", "skank", "slut", 
+  "smegma", "spastic", "twat", "vagina", "wank", "wanker", "whore"
 ];
 
 // Normalise pour comparer (minuscules + accents retirés + caractères spéciaux).
