@@ -2,11 +2,17 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 
 // POST /api/events/:id/actions — mutations du hub événement
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+
+  // Anti-spam (commentaires, photos, etc.) : 40 actions / minute / utilisateur.
+  if (!rateLimit(`${session.user.id}:event-action`, 40, 60_000)) {
+    return NextResponse.json({ error: "Trop d'actions, réessaie dans un instant." }, { status: 429 });
+  }
 
   const eventId = params.id;
   const event = await db.event.findUnique({ where: { id: eventId }, select: { id: true, hostId: true } });

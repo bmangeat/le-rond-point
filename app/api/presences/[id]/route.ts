@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { isAdmin } from "@/lib/admin";
 
 // PATCH /api/presences/:id — modifier une présence
 export async function PATCH(
@@ -13,8 +14,8 @@ export async function PATCH(
   const presence = await db.presence.findUnique({ where: { id: params.id } });
   if (!presence) return NextResponse.json({ error: "Non trouvé" }, { status: 404 });
 
-  // Seul le propriétaire ou un admin peut modifier
-  if (presence.userId !== session.user.id && session.user.role !== "ADMIN") {
+  // Seul le propriétaire ou un admin (vérifié en base) peut modifier
+  if (presence.userId !== session.user.id && !(await isAdmin(session.user.id))) {
     return NextResponse.json({ error: "Interdit" }, { status: 403 });
   }
 
@@ -51,7 +52,7 @@ export async function DELETE(
   const presence = await db.presence.findUnique({ where: { id: params.id } });
   if (!presence) return NextResponse.json({ error: "Non trouvé" }, { status: 404 });
 
-  if (presence.userId !== session.user.id && session.user.role !== "ADMIN") {
+  if (presence.userId !== session.user.id && !(await isAdmin(session.user.id))) {
     return NextResponse.json({ error: "Interdit" }, { status: 403 });
   }
 

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { sendOverlapNotification } from "@/lib/email";
 import { sendPushToUser } from "@/lib/push";
 import { formatDateRange } from "@/lib/utils";
+import { rateLimit } from "@/lib/rate-limit";
 
 // GET /api/presences — liste des présences
 export async function GET() {
@@ -25,6 +26,10 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+
+  if (!rateLimit(`${session.user.id}:presence`, 30, 60_000)) {
+    return NextResponse.json({ error: "Trop de présences créées, réessaie dans un instant." }, { status: 429 });
+  }
 
   const { startDate, endDate, note, availability } = await req.json();
 

@@ -3,11 +3,17 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { EVENT_TYPES, EventTypeKey, eventType, fmtEventWhen } from "@/lib/events";
 import { sendPushToUser } from "@/lib/push";
+import { rateLimit } from "@/lib/rate-limit";
 
 // POST /api/events — créer une sortie et prévenir le groupe
 export async function POST(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+
+  // Une création notifie tout le groupe → on limite pour éviter le spam de push.
+  if (!rateLimit(`${session.user.id}:event-create`, 10, 60_000)) {
+    return NextResponse.json({ error: "Trop de sorties créées, réessaie dans un instant." }, { status: 429 });
+  }
 
   const body = await req.json();
   const { type, name, description, when, placeName, placeAddr, needs, tricountEnabled, hasPlaylist, playlistUrl } = body;
