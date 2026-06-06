@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
-import { Mail, UserMinus, Clock, ChevronLeft, ChevronRight, Link2, Copy, Check, X, Shield, User } from "lucide-react";
+import { Mail, UserMinus, Clock, ChevronLeft, ChevronRight, Link2, Copy, Check, X, Shield, User, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { Session } from "next-auth";
 
@@ -138,6 +138,18 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
     refresh();
   }
 
+  async function handleDeleteInvitation(inv: Invitation) {
+    const label = inv.email ?? "ce lien d'invitation";
+    if (!confirm(`Supprimer l'invitation pour ${label} ? Le lien deviendra inutilisable.`)) return;
+    // Suppression optimiste, restauration en cas d'échec.
+    setPending(p => p.filter(i => i.id !== inv.id));
+    const res = await fetch(`/api/admin/invite/${inv.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      setPending(p => [inv, ...p]);
+      alert("La suppression a échoué. Réessaie.");
+    }
+  }
+
   return (
     <AppShell>
       <div className="px-4 pt-6 pb-8 space-y-6">
@@ -246,6 +258,13 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
                       Expire le {new Date(inv.expiresAt).toLocaleDateString("fr-FR")}
                     </p>
                   </div>
+                  <button
+                    onClick={() => handleDeleteInvitation(inv)}
+                    aria-label="Supprimer l'invitation"
+                    className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
             </div>
