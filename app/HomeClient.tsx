@@ -81,11 +81,59 @@ export function HomeClient({ session, presences, myPresencesWithOverlaps, events
 
         <PushPrompt />
 
-        <div className="mb-3">
+        {/* 1. Je suis au quartier aujourd'hui */}
+        <div className="mb-6">
           <TodayPresenceToggle isPresentToday={isPresentToday} isSingleDayToday={isSingleDayToday} />
         </div>
 
-        {/* Tes prochaines présences */}
+        {/* 2. Calendrier */}
+        <div className="card p-4 mb-6">
+          <div className="flex items-center justify-between mb-3.5">
+            <button onClick={() => shiftMonth(-1)} className="w-[34px] h-[34px] rounded-full bg-surface-raised flex items-center justify-center"><ChevronLeft className="w-[18px] h-[18px] text-muted-foreground" /></button>
+            <div className="text-[17px] font-bold tracking-tight">{MONTHS[cursor.m]} {cursor.y}</div>
+            <button onClick={() => shiftMonth(1)} className="w-[34px] h-[34px] rounded-full bg-surface-raised flex items-center justify-center"><ChevronRight className="w-[18px] h-[18px] text-muted-foreground" /></button>
+          </div>
+          <MonthGrid year={cursor.y} month={cursor.m} presences={presences} events={events} me={me} onDayTap={setSelectedDate} />
+        </div>
+
+        {/* 3. Qui est là en... */}
+        <section className="mb-6">
+          <h2 className="text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground mb-3">Qui est là en {MONTHS[cursor.m].toLowerCase()}</h2>
+          <div className="card p-3.5">
+            <Timeline year={cursor.y} month={cursor.m} presences={presences} me={me} onPresenceTap={(p) => p.userId === me ? openEditForm(p.id) : setSelectedDate(dayKey(new Date(p.startDate)))} />
+          </div>
+        </section>
+
+        {/* 4. Events */}
+        {events.length > 0 && (
+          <section className="mb-6">
+            <h2 className="text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground mb-2.5">Prochaines sorties</h2>
+            <div className="flex gap-2.5 overflow-x-auto -mx-[18px] px-[18px] no-scrollbar pb-1">
+              {events.map(ev => {
+                const ty = eventType(ev.type);
+                const when = fmtEventWhen(new Date(ev.whenAt));
+                const status = ev.rsvps.find(r => r.userId === me)?.status ?? "PENDING";
+                const chip = status === "YES" ? { t: "✓ Tu viens", c: "text-available bg-available-light" }
+                  : status === "NO" ? { t: "Sans toi", c: "text-destructive bg-destructive/10" }
+                  : { t: "À répondre", c: "text-busy bg-busy-light" };
+                return (
+                  <Link key={ev.id} href={`/sorties/${ev.id}`} className="flex-shrink-0 w-[150px] bg-surface border border-border rounded-2xl p-3 flex flex-col gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-[10px] flex items-center justify-center text-[18px] flex-shrink-0" style={{ background: ty.tint }}>{ty.emoji}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-bold truncate">{ev.name}</div>
+                        <div className="text-[11px] text-muted-foreground font-medium mt-0.5">{when.short}</div>
+                      </div>
+                    </div>
+                    <span className={`self-start text-[11px] font-bold px-2.5 py-1 rounded-full ${chip.c}`}>{chip.t}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* 5. Tes prochaines présences */}
         {myPresencesWithOverlaps.length > 0 && (
           <section className="mb-6">
             <h2 className="text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground mb-2.5">Tes prochaines présences</h2>
@@ -121,51 +169,6 @@ export function HomeClient({ session, presences, myPresencesWithOverlaps, events
             </div>
           </section>
         )}
-
-        {/* Prochaines sorties */}
-        {events.length > 0 && (
-          <section className="mb-6">
-            <h2 className="text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground mb-2.5">Prochaines sorties</h2>
-            <div className="flex gap-2.5 overflow-x-auto -mx-[18px] px-[18px] no-scrollbar pb-1">
-              {events.map(ev => {
-                const ty = eventType(ev.type);
-                const when = fmtEventWhen(new Date(ev.whenAt));
-                const status = ev.rsvps.find(r => r.userId === me)?.status ?? "PENDING";
-                const chip = status === "YES" ? { t: "✓ Tu viens", c: "text-available bg-available-light" }
-                  : status === "NO" ? { t: "Sans toi", c: "text-destructive bg-destructive/10" }
-                  : { t: "À répondre", c: "text-busy bg-busy-light" };
-                return (
-                  <Link key={ev.id} href={`/sorties/${ev.id}`} className="flex-shrink-0 w-[150px] bg-surface border border-border rounded-2xl p-3 flex flex-col gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-[10px] flex items-center justify-center text-[18px] flex-shrink-0" style={{ background: ty.tint }}>{ty.emoji}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-bold truncate">{ev.name}</div>
-                        <div className="text-[11px] text-muted-foreground font-medium mt-0.5">{when.short}</div>
-                      </div>
-                    </div>
-                    <span className={`self-start text-[11px] font-bold px-2.5 py-1 rounded-full ${chip.c}`}>{chip.t}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Calendrier */}
-        <div className="card p-4 mb-[18px]">
-          <div className="flex items-center justify-between mb-3.5">
-            <button onClick={() => shiftMonth(-1)} className="w-[34px] h-[34px] rounded-full bg-surface-raised flex items-center justify-center"><ChevronLeft className="w-[18px] h-[18px] text-muted-foreground" /></button>
-            <div className="text-[17px] font-bold tracking-tight">{MONTHS[cursor.m]} {cursor.y}</div>
-            <button onClick={() => shiftMonth(1)} className="w-[34px] h-[34px] rounded-full bg-surface-raised flex items-center justify-center"><ChevronRight className="w-[18px] h-[18px] text-muted-foreground" /></button>
-          </div>
-          <MonthGrid year={cursor.y} month={cursor.m} presences={presences} events={events} me={me} onDayTap={setSelectedDate} />
-        </div>
-
-        {/* Timeline */}
-        <h2 className="text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground mb-3">Qui est là en {MONTHS[cursor.m].toLowerCase()}</h2>
-        <div className="card p-3.5">
-          <Timeline year={cursor.y} month={cursor.m} presences={presences} me={me} onPresenceTap={(p) => p.userId === me ? openEditForm(p.id) : setSelectedDate(dayKey(new Date(p.startDate)))} />
-        </div>
       </div>
 
       {selectedDate && (
@@ -279,37 +282,63 @@ function Timeline({ year, month, presences, me, onPresenceTap }: {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const monthEnd = new Date(year, month, daysInMonth);
 
-  const rows = presences
-    .filter(p => new Date(p.startDate) <= monthEnd && new Date(p.endDate) >= monthStart)
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  const visible = presences.filter(p => new Date(p.startDate) <= monthEnd && new Date(p.endDate) >= monthStart);
+
+  // Regroupe par membre → une seule ligne par user, segments triés
+  const byUser = new Map<string, { user: PUser; segments: Presence[] }>();
+  for (const p of visible) {
+    const entry = byUser.get(p.userId) ?? { user: p.user, segments: [] };
+    entry.segments.push(p);
+    byUser.set(p.userId, entry);
+  }
+  const rows = Array.from(byUser.values())
+    .map(r => ({ ...r, segments: r.segments.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()) }))
+    .sort((a, b) => {
+      // Moi d'abord, puis par début de la première présence
+      if (a.user.id === me) return -1;
+      if (b.user.id === me) return 1;
+      return new Date(a.segments[0].startDate).getTime() - new Date(b.segments[0].startDate).getTime();
+    });
 
   if (rows.length === 0) {
     return <div className="text-center py-7 text-[13px] text-muted-foreground">Personne au quartier ce mois-ci.</div>;
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
-      {rows.map(p => {
-        const s = new Date(p.startDate), e = new Date(p.endDate);
-        const startDay = s < monthStart ? 1 : s.getDate();
-        const endDay = e > monthEnd ? daysInMonth : e.getDate();
-        const left = ((startDay - 1) / daysInMonth) * 100;
-        const width = ((endDay - startDay + 1) / daysInMonth) * 100;
-        const color = getMemberColor(p.user.memberColor);
-        const mine = p.userId === me;
-        const open = p.availability === "OPEN";
-        const bg = open ? color : `repeating-linear-gradient(45deg, ${color}, ${color} 4px, ${hexA(color, 0.55)} 4px, ${hexA(color, 0.55)} 9px)`;
+    <div className="flex flex-col gap-3.5 pt-1">
+      {rows.map(({ user, segments }) => {
+        const mine = user.id === me;
+        const color = getMemberColor(user.memberColor);
         return (
-          <div key={p.id} className="flex items-center gap-2">
+          <div key={user.id} className="flex items-center gap-2">
             <div className="w-[92px] flex-shrink-0 flex items-center gap-1.5">
-              <Avatar name={p.user.name} image={p.user.image} memberColor={p.user.memberColor} size="sm" />
-              <span className={`text-[12.5px] truncate ${mine ? "font-bold text-primary" : "font-semibold"}`}>{mine ? "Toi" : p.user.name.split(" ")[0]}</span>
+              <Avatar name={user.name} image={user.image} memberColor={user.memberColor} size="sm" />
+              <span className={`text-[12.5px] truncate ${mine ? "font-bold text-primary" : "font-semibold"}`}>{mine ? "Toi" : user.name.split(" ")[0]}</span>
             </div>
             <div className="relative flex-1 h-[22px] bg-surface-raised rounded-full">
-              <button onClick={() => onPresenceTap(p)} className="absolute top-0 bottom-0 rounded-full flex items-center pl-2 text-white text-[11px] font-semibold overflow-hidden"
-                style={{ left: `${left}%`, width: `${width}%`, minWidth: 22, background: bg }}>
-                <span className="truncate" style={{ opacity: width > 18 ? 1 : 0 }}>{startDay}–{endDay}</span>
-              </button>
+              {segments.map(p => {
+                const s = new Date(p.startDate), e = new Date(p.endDate);
+                const startDay = s < monthStart ? 1 : s.getDate();
+                const endDay = e > monthEnd ? daysInMonth : e.getDate();
+                const left = ((startDay - 1) / daysInMonth) * 100;
+                const width = ((endDay - startDay + 1) / daysInMonth) * 100;
+                const open = p.availability === "OPEN";
+                const bg = open ? color : `repeating-linear-gradient(45deg, ${color}, ${color} 4px, ${hexA(color, 0.55)} 4px, ${hexA(color, 0.55)} 9px)`;
+                const label = startDay === endDay ? `${startDay}` : `${startDay}–${endDay}`;
+                const wide = width > 22;
+                return (
+                  <button key={p.id} onClick={() => onPresenceTap(p)}
+                    className="absolute top-0 bottom-0 rounded-full flex items-center justify-center text-[11px] font-semibold"
+                    style={{ left: `${left}%`, width: `${width}%`, minWidth: 22, background: bg }}>
+                    {/* Date toujours visible : dans la barre si assez large, sinon en pastille au-dessus */}
+                    {wide ? (
+                      <span className="truncate px-1 text-white">{label}</span>
+                    ) : (
+                      <span className="absolute -top-[15px] left-1/2 -translate-x-1/2 text-[10px] font-bold whitespace-nowrap" style={{ color }}>{label}</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         );
