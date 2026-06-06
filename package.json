@@ -11,7 +11,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "gen:splash": "node scripts/gen-splash.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.2",
@@ -40,6 +41,7 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@img/sharp-darwin-x64": "^0.34.5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -48,6 +50,7 @@
     "eslint-config-next": "14.2.18",
     "postcss": "^8",
     "prisma": "^5.22.0",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.19.2",
