@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { sendPushToUser } from "@/lib/push";
 import { del } from "@vercel/blob";
+import { fmtEventWhen } from "@/lib/events";
 
 const firstName = (n: string) => n.split(" ")[0];
 
@@ -151,6 +152,45 @@ export async function runPhotoExpiryWarnings() {
         body: `Les ${n} photo${n > 1 ? "s" : ""} de « ${ev.name} » s'autodétruisent demain. Télécharge-les avant qu'elles partent en fumée 💨`,
         url: `/sorties/${ev.id}`,
         tag: `photo-expiry-${ev.id}`,
+      });
+      sent++;
+    }
+  }
+  return { events: events.length, sent };
+}
+
+// Rappel le matin même aux participants ("Je viens") d'une sortie du jour.
+export async function runEventDayReminders() {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+
+  const events = await db.event.findMany({
+    where: { whenAt: { gte: start, lte: end } },
+    select: {
+      id: true, name: true, whenAt: true, placeName: true,
+      rsvps: { where: { status: "YES" }, select: { userId: true } },
+    },
+  });
+  if (events.length === 0) return { events: 0, sent: 0 };
+
+  const ids = Array.from(new Set(events.flatMap(e => e.rsvps.map(r => r.userId))));
+  const users = await db.user.findMany({
+    where: { id: { in: ids }, isActive: true, notifPush: true },
+    select: { id: true },
+  });
+  const optedIn = new Set(users.map(u => u.id));
+
+  let sent = 0;
+  for (const ev of events) {
+    const time = fmtEventWhen(new Date(ev.whenAt)).time;
+    for (const r of ev.rsvps) {
+      if (!optedIn.has(r.userId)) continue;
+      await sendPushToUser(r.userId, {
+        title: "🎉 C'est aujourd'hui !",
+        body: `« ${ev.name} » à ${time} — ${ev.placeName}. À tout à l'heure !`,
+        url: `/sorties/${ev.id}`,
+        tag: `event-day-${ev.id}`,
       });
       sent++;
     }

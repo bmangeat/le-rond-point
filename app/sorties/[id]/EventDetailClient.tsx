@@ -6,7 +6,8 @@ import { upload } from "@vercel/blob/client";
 import { Avatar } from "@/components/shared/Avatar";
 import { EventGlyph } from "@/components/events/EventGlyph";
 import { eventType, fmtEventWhen, rsvpCounts, tricountBalances, fmtMoney, mapsUrl, RsvpStatus } from "@/lib/events";
-import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera, Loader2, Download } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera, Loader2, Download, CalendarPlus, Pencil } from "lucide-react";
 
 interface Member { id: string; name: string; image?: string | null; memberColor: number; city?: string | null }
 interface EventData {
@@ -106,9 +107,16 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
         <button onClick={() => router.push("/sorties")} aria-label="Retour" className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
           <ChevronLeft className="w-5 h-5 text-muted-foreground" />
         </button>
-        <div className="flex-1 text-center text-[13px] text-muted-foreground font-medium mr-9 truncate">
+        <div className="flex-1 text-center text-[13px] text-muted-foreground font-medium truncate">
           Organisé par {event.hostId === me ? "toi" : host?.name ?? "?"}
         </div>
+        {(event.hostId === me || isAdmin) ? (
+          <Link href={`/sorties/${event.id}/edit`} aria-label="Modifier" className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+            <Pencil className="w-[18px] h-[18px] text-muted-foreground" />
+          </Link>
+        ) : (
+          <div className="w-9 flex-shrink-0" />
+        )}
       </div>
 
       {/* En-tête */}
@@ -137,6 +145,9 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
           <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold flex-shrink-0" style={{ color: accent }}>
             <Navigation className="w-3.5 h-3.5" /> Y aller
           </span>
+        </a>
+        <a href={`/api/events/${event.id}/ics`} className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-border bg-surface py-2.5 text-[13.5px] font-semibold text-foreground">
+          <CalendarPlus className="w-4 h-4" style={{ color: accent }} /> Ajouter à mon agenda
         </a>
       </div>
 

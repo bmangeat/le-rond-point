@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { runBirthdayNotifications, runPresenceReminders, runEventPhotoCleanup, runPhotoExpiryWarnings } from "@/lib/cron-tasks";
+import { runBirthdayNotifications, runPresenceReminders, runEventPhotoCleanup, runPhotoExpiryWarnings, runEventDayReminders } from "@/lib/cron-tasks";
 
 // GET /api/cron/daily — tâche matinale unique appelée par Vercel Cron.
 // Regroupe les notifs d'anniversaire et les rappels de co-présence du jour.
@@ -18,6 +18,7 @@ export async function GET(req: Request) {
   // Avertir AVANT de supprimer (l'avertissement vise la fenêtre juste avant le cutoff)
   const photoWarnings = await runPhotoExpiryWarnings();
   const photos = await runEventPhotoCleanup();
+  const eventDay = await runEventDayReminders();
 
-  return NextResponse.json({ ok: true, birthdays, reminders, photoWarnings, photos });
+  return NextResponse.json({ ok: true, birthdays, reminders, photoWarnings, photos, eventDay });
 }

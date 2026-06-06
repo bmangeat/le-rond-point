@@ -82,8 +82,9 @@ export function tricountBalances(expenses: ExpenseLike[]): Record<string, number
   return bal;
 }
 
-// Lien d'itinéraire universel (s'ouvre dans l'app de cartes par défaut).
+// Lien d'itinéraire : ouvre directement la navigation (Google Maps app/web,
+// qui propose Plans sur iOS). On vise la destination, le départ = position actuelle.
 export function mapsUrl(place: { name: string; addr?: string | null }): string {
   const q = encodeURIComponent([place.name, place.addr].filter(Boolean).join(", "));
-  return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${q}`;
 }
