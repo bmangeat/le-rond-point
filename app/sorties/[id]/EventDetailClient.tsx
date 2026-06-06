@@ -6,6 +6,7 @@ import { upload } from "@vercel/blob/client";
 import { Avatar } from "@/components/shared/Avatar";
 import { EventGlyph } from "@/components/events/EventGlyph";
 import { eventType, fmtEventWhen, rsvpCounts, tricountBalances, fmtMoney, mapsUrl, RsvpStatus } from "@/lib/events";
+import { getMemberColor, hexA } from "@/lib/utils";
 import Link from "next/link";
 import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera, Loader2, Download, CalendarPlus, Pencil } from "lucide-react";
 
@@ -486,6 +487,25 @@ function LifeTab({ event, accent, me, memberMap, busy, action, isAdmin }: {
     setMsg("");
   }
 
+  // Regroupe les messages consécutifs d'un même auteur envoyés à moins de 2 min
+  // d'intervalle : avatar + nom affichés une seule fois, textes empilés dans une bulle.
+  const GROUP_WINDOW_MS = 2 * 60 * 1000;
+  const commentGroups = useMemo(() => {
+    type Grp = { authorId: string; firstAt: string; lastAt: string; texts: { id: string; text: string }[] };
+    const groups: Grp[] = [];
+    for (const c of event.comments) {
+      const last = groups[groups.length - 1];
+      if (last && last.authorId === c.authorId &&
+          new Date(c.createdAt).getTime() - new Date(last.lastAt).getTime() <= GROUP_WINDOW_MS) {
+        last.texts.push({ id: c.id, text: c.text });
+        last.lastAt = c.createdAt;
+      } else {
+        groups.push({ authorId: c.authorId, firstAt: c.createdAt, lastAt: c.createdAt, texts: [{ id: c.id, text: c.text }] });
+      }
+    }
+    return groups;
+  }, [event.comments, GROUP_WINDOW_MS]);
+
   async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -587,20 +607,26 @@ function LifeTab({ event, accent, me, memberMap, busy, action, isAdmin }: {
       {event.comments.length === 0 ? (
         <div className="text-center py-2 text-muted-foreground"><div className="text-2xl">💬</div><div className="text-[13px] mt-1">Lance la discussion !</div></div>
       ) : (
-        <div className="flex flex-col gap-3.5 mb-3.5">
-          {event.comments.map(c => {
-            const m = memberMap.get(c.authorId); const mine = c.authorId === me;
-            const d = new Date(c.createdAt);
+        <div className="flex flex-col gap-4 mb-3.5">
+          {commentGroups.map(g => {
+            const m = memberMap.get(g.authorId); const mine = g.authorId === me;
+            const color = getMemberColor(m?.memberColor ?? 1);
+            const d = new Date(g.firstAt);
             const time = `${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`;
             return (
-              <div key={c.id} className="flex gap-2.5 items-start">
+              <div key={g.texts[0].id} className="flex gap-2.5 items-start">
                 <Avatar name={m?.name ?? "?"} image={m?.image} memberColor={m?.memberColor ?? 1} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-[13.5px] font-semibold">{mine ? "Toi" : m?.name}</span>
+                    <span className="text-[13.5px] font-semibold" style={{ color }}>{mine ? "Toi" : m?.name}</span>
                     <span className="text-[11px] text-muted-foreground">{time}</span>
                   </div>
-                  <div className="text-[14px] bg-surface-raised rounded-[4px_14px_14px_14px] px-3 py-2 mt-1 leading-relaxed">{c.text}</div>
+                  <div
+                    className="text-[14px] rounded-[4px_14px_14px_14px] px-3 py-2 mt-1 leading-relaxed text-foreground flex flex-col gap-1.5"
+                    style={{ background: hexA(color, 0.1), borderLeft: `3px solid ${hexA(color, 0.55)}` }}
+                  >
+                    {g.texts.map(t => <span key={t.id}>{t.text}</span>)}
+                  </div>
                 </div>
               </div>
             );
