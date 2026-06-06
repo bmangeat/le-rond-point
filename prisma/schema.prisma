@@ -30,6 +30,7 @@ model User {
   notifPushBirthday Boolean @default(true)  // anniversaires
   notifPushPresence Boolean @default(true)  // nouvelle présence ajoutée
   notifPushPhotos   Boolean @default(true)  // photos d'une sortie qui expirent
+  notifPushEvents   Boolean @default(true)  // nouvelles sorties + rappel du jour J
   memberColor   Int         @default(1) // 1-12, assigné auto à l'inscription
   role          Role        @default(MEMBER)
   isActive      Boolean     @default(true) // soft delete

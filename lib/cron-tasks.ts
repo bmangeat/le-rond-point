@@ -176,7 +176,7 @@ export async function runEventDayReminders() {
 
   const ids = Array.from(new Set(events.flatMap(e => e.rsvps.map(r => r.userId))));
   const users = await db.user.findMany({
-    where: { id: { in: ids }, isActive: true, notifPush: true },
+    where: { id: { in: ids }, isActive: true, notifPush: true, notifPushEvents: true },
     select: { id: true },
   });
   const optedIn = new Set(users.map(u => u.id));

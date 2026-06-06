@@ -10,7 +10,7 @@ export async function PATCH(req: Request) {
   const body = await req.json();
   const {
     name, city, notifEmail, notifPush, image, birthday, phone, instagram, snapchat, tiktok, linkedin,
-    notifPushOverlap, notifPushBirthday, notifPushPresence, notifPushPhotos,
+    notifPushOverlap, notifPushBirthday, notifPushPresence, notifPushPhotos, notifPushEvents,
   } = body;
 
   // Nettoie un champ texte optionnel : "" → null, sinon trim
@@ -28,6 +28,7 @@ export async function PATCH(req: Request) {
       ...(typeof notifPushBirthday === "boolean" && { notifPushBirthday }),
       ...(typeof notifPushPresence === "boolean" && { notifPushPresence }),
       ...(typeof notifPushPhotos === "boolean" && { notifPushPhotos }),
+      ...(typeof notifPushEvents === "boolean" && { notifPushEvents }),
       ...(image !== undefined && { image: clean(image) }),
       ...(birthday !== undefined && { birthday: birthday ? new Date(birthday) : null }),
       ...(phone !== undefined && { phone: clean(phone) }),

@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   // Notifier le groupe (push)
   try {
     const others = await db.user.findMany({
-      where: { id: { not: session.user.id }, isActive: true, notifPush: true },
+      where: { id: { not: session.user.id }, isActive: true, notifPush: true, notifPushEvents: true },
       select: { id: true },
     });
     const hostName = (session.user.name ?? "Quelqu'un").split(" ")[0];
