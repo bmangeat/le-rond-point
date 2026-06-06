@@ -10,32 +10,34 @@ export default async function PresencesPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const presences = await db.presence.findMany({
-    where: {
-      endDate: { gte: today },
-      user: { isActive: true },
-    },
-    include: {
-      user: {
-        select: { id: true, name: true, image: true, city: true, memberColor: true },
+  // Requêtes indépendantes → en parallèle (latence Neon cumulée réduite)
+  const [presences, pastPresences] = await Promise.all([
+    db.presence.findMany({
+      where: {
+        endDate: { gte: today },
+        user: { isActive: true },
       },
-    },
-    orderBy: { startDate: "asc" },
-  });
-
-  const pastPresences = await db.presence.findMany({
-    where: {
-      endDate: { lt: today },
-      user: { isActive: true },
-    },
-    include: {
-      user: {
-        select: { id: true, name: true, image: true, city: true, memberColor: true },
+      include: {
+        user: {
+          select: { id: true, name: true, image: true, city: true, memberColor: true },
+        },
       },
-    },
-    orderBy: { startDate: "desc" },
-    take: 20,
-  });
+      orderBy: { startDate: "asc" },
+    }),
+    db.presence.findMany({
+      where: {
+        endDate: { lt: today },
+        user: { isActive: true },
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, image: true, city: true, memberColor: true },
+        },
+      },
+      orderBy: { startDate: "desc" },
+      take: 20,
+    }),
+  ]);
 
   return (
     <PresencesClient

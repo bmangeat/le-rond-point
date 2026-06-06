@@ -16,26 +16,29 @@ export default async function MemberPage({ params }: { params: { id: string } })
   const session = await auth();
   if (!session) redirect("/login");
 
-  const user = await db.user.findUnique({
-    where: { id: params.id },
-    select: {
-      id: true, name: true, image: true, city: true, memberColor: true, role: true,
-      isActive: true, birthday: true, phone: true, instagram: true, snapchat: true,
-      tiktok: true, linkedin: true,
-    },
-  });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // La requête présences dépend de params.id (pas du résultat user) → parallèle.
+  const [user, upcoming] = await Promise.all([
+    db.user.findUnique({
+      where: { id: params.id },
+      select: {
+        id: true, name: true, image: true, city: true, memberColor: true, role: true,
+        isActive: true, birthday: true, phone: true, instagram: true, snapchat: true,
+        tiktok: true, linkedin: true,
+      },
+    }),
+    db.presence.findMany({
+      where: { userId: params.id, endDate: { gte: today } },
+      orderBy: { startDate: "asc" },
+      take: 10,
+    }),
+  ]);
 
   if (!user || !user.isActive) notFound();
 
   const isMe = user.id === session.user.id;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const upcoming = await db.presence.findMany({
-    where: { userId: user.id, endDate: { gte: today } },
-    orderBy: { startDate: "asc" },
-    take: 10,
-  });
 
   const contacts: { href: string; label: string; value: string; Icon: typeof Phone; external?: boolean }[] = [];
   if (user.phone) {
