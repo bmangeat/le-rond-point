@@ -643,7 +643,7 @@ function LifeTab({ event, accent, me, memberMap, busy, action, isAdmin }: {
                           style={{
                             background: hexA(color, 0.1),
                             borderLeft: `3px solid ${hexA(color, 0.55)}`,
-                            borderRadius: `4px 14px ${isLast ? 14 : 4}px 14px`,
+                            borderRadius: `4px 14px 14px ${isLast ? 14 : 4}px`,
                           }}
                         >
                           <span className="flex-1 min-w-0 break-words">{t.text}</span>
