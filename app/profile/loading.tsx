@@ -5,27 +5,35 @@ export default function ProfileLoading() {
   return (
     <AppShell>
       <div className="px-4 pt-6 pb-8 space-y-6">
-        {/* Header profil */}
+        {/* Header : avatar + nom + ville */}
         <div className="flex items-center gap-4">
-          <Skeleton className="h-16 w-16 rounded-full" />
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-3 w-40" />
+          <Skeleton className="w-20 h-20 rounded-full flex-shrink-0" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-6 w-36" />
+            <Skeleton className="h-4 w-24" />
           </div>
         </div>
 
-        <Skeleton className="h-16 w-full rounded-xl" />
-
-        <div className="space-y-4">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-11 w-full rounded-xl" />
-          <Skeleton className="h-11 w-full rounded-xl" />
+        {/* Accordéon Infos personnelles */}
+        <div className="space-y-2">
+          <Skeleton className="h-14 w-full rounded-2xl" />
+          <div className="space-y-3 px-1">
+            <Skeleton className="h-11 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+          </div>
         </div>
 
-        <div className="space-y-3">
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-16 w-full rounded-xl" />
-          <Skeleton className="h-16 w-full rounded-xl" />
+        {/* Accordéon Réseaux */}
+        <Skeleton className="h-14 w-full rounded-2xl" />
+
+        {/* Accordéon Notifications */}
+        <Skeleton className="h-14 w-full rounded-2xl" />
+
+        {/* Lien admin + déconnexion */}
+        <div className="space-y-3 pt-2">
+          <Skeleton className="h-11 w-full rounded-xl" />
+          <Skeleton className="h-11 w-full rounded-xl" />
         </div>
       </div>
     </AppShell>
