@@ -68,7 +68,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           Accès sur invitation uniquement.
         </p>
         <a
-          href="#invitation"
+          href="/invite"
           className="text-primary font-semibold mt-2"
           style={{ fontSize: 13 }}
         >
