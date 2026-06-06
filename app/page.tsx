@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { dateKeyUTC } from "@/lib/utils";
 import { HomeClient } from "./HomeClient";
 
 export default async function HomePage() {
@@ -31,35 +30,6 @@ export default async function HomePage() {
     orderBy: { startDate: "asc" },
   });
 
-  // Calculer les jours avec présences pour le calendrier
-  const presenceDaysMap = new Map<string, {
-    count: number;
-    isMine: boolean;
-    users: Array<{ id: string; name: string; memberColor: number }>;
-  }>();
-
-  for (const p of presences) {
-    const end = new Date(p.endDate);
-    const current = new Date(p.startDate);
-
-    while (current <= end) {
-      const dateStr = dateKeyUTC(current);
-      const existing = presenceDaysMap.get(dateStr) ?? { count: 0, isMine: false, users: [] };
-      existing.count++;
-      if (p.userId === session.user.id) existing.isMine = true;
-      if (!existing.users.find(u => u.id === p.user.id)) {
-        existing.users.push({ id: p.user.id, name: p.user.name, memberColor: p.user.memberColor });
-      }
-      presenceDaysMap.set(dateStr, existing);
-      current.setUTCDate(current.getUTCDate() + 1);
-    }
-  }
-
-  const presenceDays = Array.from(presenceDaysMap.entries()).map(([date, data]) => ({
-    date,
-    ...data,
-  }));
-
   // Statut "présent aujourd'hui" — bornes en UTC (présences stockées à minuit UTC)
   const now = new Date();
   const todayStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
@@ -84,12 +54,22 @@ export default async function HomePage() {
     ),
   }));
 
+  // Sorties à venir (strip + pastilles calendrier)
+  const events = await db.event.findMany({
+    where: { whenAt: { gte: todayStart } },
+    orderBy: { whenAt: "asc" },
+    select: {
+      id: true, type: true, name: true, whenAt: true, placeName: true,
+      rsvps: { select: { userId: true, status: true } },
+    },
+  });
+
   return (
     <HomeClient
       session={session}
-      presenceDays={presenceDays}
-      presences={presences}
-      myPresencesWithOverlaps={myPresencesWithOverlaps}
+      presences={JSON.parse(JSON.stringify(presences))}
+      myPresencesWithOverlaps={JSON.parse(JSON.stringify(myPresencesWithOverlaps))}
+      events={JSON.parse(JSON.stringify(events))}
       isPresentToday={isPresentToday}
       isSingleDayToday={isSingleDayToday}
     />

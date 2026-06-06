@@ -9,8 +9,8 @@ import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
 
 interface DayPresence {
   id: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: string | Date;
+  endDate: string | Date;
   note?: string | null;
   availability: "OPEN" | "BUSY";
   user: {

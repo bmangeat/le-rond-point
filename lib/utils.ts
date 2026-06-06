@@ -67,6 +67,13 @@ export function datesOverlap(
 // Clé de jour "YYYY-MM-DD" en UTC. Les présences sont stockées à minuit UTC
 // (le <input type="date"> envoie "2026-06-12" → new Date() = minuit UTC).
 // On garde donc tout le mapping calendrier en UTC pour éviter les décalages d'un jour.
+// Couleur hex + alpha → rgba()
+export function hexA(hex: string, a: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
 export function dateKeyUTC(d: Date): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
 }
