@@ -39,9 +39,93 @@ model User {
   invitedBy     Invitation? @relation("InvitedUser")
   pushSubscriptions PushSubscription[]
 
+  // Sorties / événements
+  eventsHosted  Event[]        @relation("EventHost")
+  eventRsvps    EventRsvp[]
+  eventNeeds    EventNeed[]    @relation("NeedClaim")
+  eventExpenses EventExpense[] @relation("ExpensePayer")
+  eventComments EventComment[]
+
   // NextAuth adapter fields
   accounts      Account[]
   sessions      Session[]
+}
+
+// ─── Sorties / événements ─────────────────────────────────────────────────────
+
+model Event {
+  id              String     @id @default(cuid())
+  type            EventType
+  name            String
+  hostId          String
+  host            User       @relation("EventHost", fields: [hostId], references: [id], onDelete: Cascade)
+  description     String?    @db.VarChar(500)
+  whenAt          DateTime
+  placeName       String
+  placeAddr       String?
+  logisticsKind   String     // "list" | "tricount"
+  tricountEnabled Boolean    @default(true)
+  hasPlaylist     Boolean    @default(false)
+  playlistUrl     String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  rsvps    EventRsvp[]
+  needs    EventNeed[]
+  expenses EventExpense[]
+  comments EventComment[]
+
+  @@index([whenAt])
+}
+
+model EventRsvp {
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status  String // "YES" | "NO" | "PENDING"
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+}
+
+model EventNeed {
+  id          String  @id @default(cuid())
+  eventId     String
+  event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  label       String
+  claimedById String?
+  claimedBy   User?   @relation("NeedClaim", fields: [claimedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([eventId])
+}
+
+model EventExpense {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  payerId     String
+  payer       User     @relation("ExpensePayer", fields: [payerId], references: [id], onDelete: Cascade)
+  label       String
+  amount      Float
+  forUserIds  String[]
+  createdAt   DateTime @default(now())
+
+  @@index([eventId])
+}
+
+model EventComment {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  text      String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
 }
 
 model PushSubscription {
@@ -122,6 +206,13 @@ model VerificationToken {
 enum Role {
   ADMIN
   MEMBER
+}
+
+enum EventType {
+  BAR
+  RESTO
+  SOIREE
+  SORTIE
 }
 
 enum Availability {

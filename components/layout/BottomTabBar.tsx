@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, List, User } from "lucide-react";
+import { CalendarDays, List, PartyPopper, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { href: "/",           label: "Calendrier",  Icon: CalendarDays },
   { href: "/presences",  label: "Présences",   Icon: List },
+  { href: "/sorties",    label: "Sorties",     Icon: PartyPopper },
   { href: "/profile",    label: "Profil",      Icon: User },
 ];
 
@@ -17,7 +18,7 @@ export function BottomTabBar() {
   return (
     <nav className="bottom-nav">
       {tabs.map(({ href, label, Icon }) => {
-        const active = pathname === href;
+        const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
         return (
           <Link
             key={href}
