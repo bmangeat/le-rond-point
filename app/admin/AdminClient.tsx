@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
-import { Mail, UserMinus, Clock, ChevronLeft, ChevronRight, Link2, Copy, Check, X, Shield, User, Trash2 } from "lucide-react";
+import { Mail, UserMinus, Clock, ChevronLeft, ChevronRight, Link2, Copy, Check, X, Shield, User, Trash2, Flag } from "lucide-react";
 import Link from "next/link";
 import type { Session } from "next-auth";
 
@@ -28,13 +28,23 @@ interface Invitation {
   createdAt: Date;
 }
 
+interface ReportedComment {
+  id: string;
+  text: string;
+  author: { name: string };
+  event: { id: string; name: string };
+  _count: { reports: number };
+  reports: { reason: string | null; reporter: { name: string } }[];
+}
+
 interface AdminClientProps {
   session: Session;
   members: Member[];
   pendingInvitations: Invitation[];
+  reportedComments: ReportedComment[];
 }
 
-export function AdminClient({ session, members, pendingInvitations }: AdminClientProps) {
+export function AdminClient({ session, members, pendingInvitations, reportedComments }: AdminClientProps) {
   const router = useRouter();
   const refresh = useCallback(() => router.refresh(), [router]);
 
@@ -53,6 +63,21 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
 
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [roleBusy, setRoleBusy] = useState(false);
+
+  // File de modération (mise à jour optimiste).
+  const [reports, setReports] = useState<ReportedComment[]>(reportedComments);
+
+  async function handleReport(commentId: string, op: "delete" | "dismiss") {
+    const label = op === "delete" ? "Supprimer ce commentaire ?" : "Ignorer ce signalement ?";
+    if (!confirm(label)) return;
+    setReports(r => r.filter(c => c.id !== commentId));
+    const res = await fetch("/api/admin/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ commentId, op }),
+    });
+    if (!res.ok) { refresh(); alert("L'action a échoué. Réessaie."); }
+  }
 
   useLockBodyScroll(!!selectedMember);
 
@@ -160,6 +185,53 @@ export function AdminClient({ session, members, pendingInvitations }: AdminClien
           </Link>
           <h1 className="text-heading-1">Administration</h1>
         </div>
+
+        {/* Commentaires signalés (modération) */}
+        {reports.length > 0 && (
+          <div>
+            <h2 className="text-label mb-3 flex items-center gap-1.5 text-destructive">
+              <Flag className="w-4 h-4" /> Commentaires signalés ({reports.length})
+            </h2>
+            <div className="space-y-2">
+              {reports.map(c => (
+                <div key={c.id} className="card border-destructive/30 bg-destructive/5 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-caption">
+                      <span className="font-semibold text-foreground">{c.author.name}</span>
+                      {" · "}
+                      <Link href={`/sorties/${c.event.id}`} className="text-primary hover:underline">{c.event.name}</Link>
+                    </p>
+                    <span className="text-2xs font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+                      {c._count.reports} signalement{c._count.reports > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <p className="text-body-strong bg-surface rounded-lg px-3 py-2 border border-border break-words">{c.text}</p>
+                  {c.reports.some(r => r.reason) && (
+                    <ul className="text-caption space-y-0.5">
+                      {c.reports.filter(r => r.reason).map((r, i) => (
+                        <li key={i}>↳ {r.reporter.name} : « {r.reason} »</li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="flex gap-2 pt-0.5">
+                    <button
+                      onClick={() => handleReport(c.id, "delete")}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-destructive bg-destructive/10 font-semibold text-sm hover:bg-destructive/15 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" /> Supprimer
+                    </button>
+                    <button
+                      onClick={() => handleReport(c.id, "dismiss")}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-muted-foreground bg-surface border border-border font-semibold text-sm hover:bg-muted transition-colors"
+                    >
+                      <Check className="w-4 h-4" /> Ignorer
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Inviter */}
         <div className="card space-y-3">

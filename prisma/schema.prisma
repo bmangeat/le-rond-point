@@ -49,6 +49,7 @@ model User {
   eventExpenses EventExpense[] @relation("ExpensePayer")
   eventComments EventComment[]
   eventPhotos   EventPhoto[]   @relation("PhotoUploader")
+  commentReports CommentReport[]
 
   // NextAuth adapter fields
   accounts      Account[]
@@ -142,8 +143,23 @@ model EventComment {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   text      String   @db.VarChar(500)
   createdAt DateTime @default(now())
+  reports   CommentReport[]
 
   @@index([eventId])
+}
+
+// Signalement d'un commentaire (modération UGC, conformité DSA).
+model CommentReport {
+  id         String       @id @default(cuid())
+  commentId  String
+  comment    EventComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String?      @db.VarChar(280)
+  createdAt  DateTime     @default(now())
+
+  @@unique([commentId, reporterId]) // un seul signalement par personne et commentaire
+  @@index([commentId])
 }
 
 model PushSubscription {

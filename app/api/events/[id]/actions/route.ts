@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
+import { isAdmin } from "@/lib/admin";
+import { containsProfanity } from "@/lib/profanity";
 
 // POST /api/events/:id/actions — mutations du hub événement
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -78,8 +80,34 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     case "addComment": {
       const text = (body.text as string)?.trim();
       if (!text) return NextResponse.json({ error: "Message vide" }, { status: 400 });
+      if (containsProfanity(text)) {
+        return NextResponse.json({ error: "Ton message contient des propos non autorisés." }, { status: 400 });
+      }
       const comment = await db.eventComment.create({ data: { eventId, authorId: me, text } });
       return NextResponse.json({ ok: true, comment });
+    }
+
+    case "deleteComment": {
+      const comment = await db.eventComment.findFirst({ where: { id: body.commentId, eventId } });
+      if (!comment) return NextResponse.json({ error: "Commentaire introuvable" }, { status: 404 });
+      // Autorisé : l'auteur, l'hôte de la sortie, ou un admin (rôle vérifié en base)
+      const allowed = comment.authorId === me || event.hostId === me || (await isAdmin(me));
+      if (!allowed) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+      await db.eventComment.delete({ where: { id: comment.id } });
+      return NextResponse.json({ ok: true });
+    }
+
+    case "reportComment": {
+      const comment = await db.eventComment.findFirst({ where: { id: body.commentId, eventId } });
+      if (!comment) return NextResponse.json({ error: "Commentaire introuvable" }, { status: 404 });
+      const reason = (body.reason as string)?.trim()?.slice(0, 280) || null;
+      // upsert : un seul signalement par personne et commentaire (pas d'erreur si re-signalé)
+      await db.commentReport.upsert({
+        where: { commentId_reporterId: { commentId: comment.id, reporterId: me } },
+        create: { commentId: comment.id, reporterId: me, reason },
+        update: { reason },
+      });
+      return NextResponse.json({ ok: true });
     }
 
     case "addPhoto": {

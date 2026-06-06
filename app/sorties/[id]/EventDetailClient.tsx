@@ -8,7 +8,7 @@ import { EventGlyph } from "@/components/events/EventGlyph";
 import { eventType, fmtEventWhen, rsvpCounts, tricountBalances, fmtMoney, mapsUrl, RsvpStatus } from "@/lib/events";
 import { getMemberColor, hexA } from "@/lib/utils";
 import Link from "next/link";
-import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera, Loader2, Download, CalendarPlus, Pencil } from "lucide-react";
+import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera, Loader2, Download, CalendarPlus, Pencil, Trash2, Flag } from "lucide-react";
 
 interface Member { id: string; name: string; image?: string | null; memberColor: number; city?: string | null }
 interface EventData {
@@ -80,6 +80,13 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
       } else if (a === "addComment") {
         const { comment } = await post(payload);
         setEv(e => ({ ...e, comments: [...e.comments, { id: comment.id, authorId: comment.authorId, text: comment.text, createdAt: comment.createdAt }] }));
+      } else if (a === "deleteComment") {
+        const commentId = payload.commentId as string;
+        setEv(e => ({ ...e, comments: e.comments.filter(c => c.id !== commentId) }));
+        await post(payload);
+      } else if (a === "reportComment") {
+        await post(payload);
+        alert("Merci, le commentaire a été signalé aux administrateurs.");
       } else if (a === "setPlaylist") {
         const url = ((payload.url as string) || "").trim() || null;
         setEv(e => ({ ...e, playlistUrl: url, hasPlaylist: !!url }));
@@ -629,7 +636,31 @@ function LifeTab({ event, accent, me, memberMap, busy, action, isAdmin }: {
                     className="text-[14px] rounded-[4px_14px_14px_14px] px-3 py-2 mt-1 leading-relaxed text-foreground flex flex-col gap-1.5"
                     style={{ background: hexA(color, 0.1), borderLeft: `3px solid ${hexA(color, 0.55)}` }}
                   >
-                    {g.texts.map(t => <span key={t.id}>{t.text}</span>)}
+                    {g.texts.map(t => {
+                      const canDelete = mine || event.hostId === me || isAdmin;
+                      return (
+                        <div key={t.id} className="flex items-start gap-1.5">
+                          <span className="flex-1 min-w-0 break-words">{t.text}</span>
+                          {canDelete ? (
+                            <button
+                              onClick={() => { if (confirm("Supprimer ce message ?")) action({ action: "deleteComment", commentId: t.id }); }}
+                              aria-label="Supprimer le message"
+                              className="flex-shrink-0 mt-0.5 text-muted-foreground/50 hover:text-destructive transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => { if (confirm("Signaler ce message aux administrateurs ?")) action({ action: "reportComment", commentId: t.id }); }}
+                              aria-label="Signaler le message"
+                              className="flex-shrink-0 mt-0.5 text-muted-foreground/50 hover:text-busy transition-colors"
+                            >
+                              <Flag className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

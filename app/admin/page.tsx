@@ -7,7 +7,7 @@ export default async function AdminPage() {
   const session = await getAdminSession();
   if (!session) redirect("/");
 
-  const [members, pendingInvitations] = await Promise.all([
+  const [members, pendingInvitations, reportedComments] = await Promise.all([
     db.user.findMany({
       where: { isActive: true },
       select: {
@@ -20,7 +20,26 @@ export default async function AdminPage() {
       where: { usedAt: null, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: "desc" },
     }),
+    db.eventComment.findMany({
+      where: { reports: { some: {} } },
+      select: {
+        id: true,
+        text: true,
+        author: { select: { name: true } },
+        event: { select: { id: true, name: true } },
+        _count: { select: { reports: true } },
+        reports: { select: { reason: true, reporter: { select: { name: true } } }, take: 5 },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
-  return <AdminClient session={session} members={members} pendingInvitations={pendingInvitations} />;
+  return (
+    <AdminClient
+      session={session}
+      members={members}
+      pendingInvitations={pendingInvitations}
+      reportedComments={JSON.parse(JSON.stringify(reportedComments))}
+    />
+  );
 }
