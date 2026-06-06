@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Bell, Check } from "lucide-react";
 import { Avatar } from "@/components/shared/Avatar";
 import { cn } from "@/lib/utils";
+import { subscribeToPush } from "@/lib/push-client";
 
 interface OnboardingClientProps {
   name: string;
@@ -11,18 +13,25 @@ interface OnboardingClientProps {
   memberColor: number;
 }
 
+type Step = 0 | 1 | 2;
+
 export function OnboardingClient({ name, image, memberColor }: OnboardingClientProps) {
   const router = useRouter();
   const today = new Date().toISOString().split("T")[0];
   const firstName = name.split(" ")[0];
 
-  const [step, setStep] = useState<0 | 1>(0);
+  const [step, setStep] = useState<Step>(0);
 
-  // Étape 1
+  // Étape 1 — profil
   const [city, setCity] = useState("");
   const [birthday, setBirthday] = useState("");
 
-  // Étape 2
+  // Étape 2 — notifications
+  const [notifBusy, setNotifBusy] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [notifMsg, setNotifMsg] = useState<string | null>(null);
+
+  // Étape 3 — présence
   const [hasNoDate, setHasNoDate] = useState(false);
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
@@ -31,8 +40,24 @@ export function OnboardingClient({ name, image, memberColor }: OnboardingClientP
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function goToStep2() {
-    setStep(1);
+  async function enableNotifications() {
+    setNotifBusy(true);
+    setNotifMsg(null);
+    try {
+      const res = await subscribeToPush();
+      if (res === "subscribed") {
+        setNotifEnabled(true);
+        setTimeout(() => setStep(2), 500);
+      } else if (res === "denied") {
+        setNotifMsg("Notifications bloquées. Tu pourras les réactiver dans les réglages de ton téléphone.");
+      } else {
+        setNotifMsg("Sur iPhone, installe d'abord l'app sur ton écran d'accueil (on te montre comment juste après) pour activer les notifications.");
+      }
+    } catch {
+      setNotifMsg("Une erreur est survenue. Tu pourras réessayer depuis ton profil.");
+    } finally {
+      setNotifBusy(false);
+    }
   }
 
   async function finish() {
@@ -75,7 +100,7 @@ export function OnboardingClient({ name, image, memberColor }: OnboardingClientP
     <div className="min-h-screen bg-background flex flex-col px-7 pt-16 pb-9">
       {/* Progression */}
       <div className="flex gap-1.5 mb-9">
-        {[0, 1].map((i) => (
+        {[0, 1, 2].map((i) => (
           <div
             key={i}
             className="flex-1 h-1.5 rounded-full transition-colors"
@@ -85,10 +110,10 @@ export function OnboardingClient({ name, image, memberColor }: OnboardingClientP
       </div>
 
       {step === 0 ? (
-        /* ─── ÉTAPE 1 ─── */
+        /* ─── ÉTAPE 1 — PROFIL ─── */
         <div className="flex-1 flex flex-col">
           <p className="text-primary font-semibold mb-2" style={{ fontSize: 13 }}>
-            ÉTAPE 1 / 2
+            ÉTAPE 1 / 3
           </p>
           <h1
             className="text-foreground"
@@ -124,11 +149,54 @@ export function OnboardingClient({ name, image, memberColor }: OnboardingClientP
             className="w-full px-3.5 py-3 rounded-xl border border-border bg-surface text-base outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
         </div>
-      ) : (
-        /* ─── ÉTAPE 2 ─── */
+      ) : step === 1 ? (
+        /* ─── ÉTAPE 2 — NOTIFICATIONS ─── */
         <div className="flex-1 flex flex-col">
           <p className="text-primary font-semibold mb-2" style={{ fontSize: 13 }}>
-            ÉTAPE 2 / 2
+            ÉTAPE 2 / 3
+          </p>
+          <h1
+            className="text-foreground"
+            style={{ fontSize: 27, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.15 }}
+          >
+            Reste dans la boucle
+          </h1>
+          <p className="text-muted-foreground mt-2.5 leading-relaxed" style={{ fontSize: 15 }}>
+            Active les notifications pour ne rien rater de la vie du quartier.
+          </p>
+
+          <div className="mt-8 flex justify-center mb-7">
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+              <Bell className="w-11 h-11 text-primary" />
+            </div>
+          </div>
+
+          <ul className="space-y-3 mb-2">
+            {[
+              "Quand un ami sera au quartier en même temps que toi",
+              "Les anniversaires de la bande",
+              "Les nouvelles sorties et leurs rappels",
+            ].map((t) => (
+              <li key={t} className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-available-light flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Check className="w-3 h-3 text-available" strokeWidth={3} />
+                </span>
+                <span className="text-sm text-foreground">{t}</span>
+              </li>
+            ))}
+          </ul>
+
+          {notifMsg && (
+            <p className="text-sm text-muted-foreground bg-muted/60 rounded-xl px-3.5 py-3 mt-4">
+              {notifMsg}
+            </p>
+          )}
+        </div>
+      ) : (
+        /* ─── ÉTAPE 3 — PRÉSENCE ─── */
+        <div className="flex-1 flex flex-col">
+          <p className="text-primary font-semibold mb-2" style={{ fontSize: 13 }}>
+            ÉTAPE 3 / 3
           </p>
           <h1
             className="text-foreground"
@@ -227,24 +295,67 @@ export function OnboardingClient({ name, image, memberColor }: OnboardingClientP
       )}
 
       {/* Boutons bas */}
-      <div className="flex gap-2.5 items-center">
-        {step === 1 && (
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2.5 items-center">
+          {step > 0 && (
+            <button
+              type="button"
+              onClick={() => setStep((s) => (s - 1) as Step)}
+              className="px-5 py-3.5 rounded-full text-muted-foreground font-semibold text-sm"
+            >
+              Retour
+            </button>
+          )}
+
+          {step === 0 && (
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="flex-1 py-3.5 rounded-full bg-primary text-white font-semibold text-sm shadow-primary active:scale-[0.98] transition-transform"
+            >
+              Continuer
+            </button>
+          )}
+
+          {step === 1 && (
+            <button
+              type="button"
+              onClick={enableNotifications}
+              disabled={notifBusy || notifEnabled}
+              className="flex-1 py-3.5 rounded-full bg-primary text-white font-semibold text-sm shadow-primary active:scale-[0.98] transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {notifEnabled ? (
+                <><Check className="w-4 h-4" strokeWidth={3} /> Activées !</>
+              ) : notifBusy ? (
+                "Un instant…"
+              ) : (
+                "Activer les notifications"
+              )}
+            </button>
+          )}
+
+          {step === 2 && (
+            <button
+              type="button"
+              onClick={finish}
+              disabled={loading}
+              className="flex-1 py-3.5 rounded-full bg-primary text-white font-semibold text-sm shadow-primary active:scale-[0.98] transition-transform disabled:opacity-60"
+            >
+              {loading ? "Un instant…" : "C'est parti !"}
+            </button>
+          )}
+        </div>
+
+        {/* Lien "plus tard" sur l'étape notifications */}
+        {step === 1 && !notifEnabled && (
           <button
             type="button"
-            onClick={() => setStep(0)}
-            className="px-5 py-3.5 rounded-full text-muted-foreground font-semibold text-sm"
+            onClick={() => setStep(2)}
+            className="py-2 text-sm text-muted-foreground font-medium"
           >
-            Retour
+            Plus tard
           </button>
         )}
-        <button
-          type="button"
-          onClick={step === 0 ? goToStep2 : finish}
-          disabled={loading}
-          className="flex-1 py-3.5 rounded-full bg-primary text-white font-semibold text-sm shadow-primary active:scale-[0.98] transition-transform disabled:opacity-60"
-        >
-          {step === 0 ? "Continuer" : loading ? "Un instant…" : "C'est parti !"}
-        </button>
       </div>
     </div>
   );
