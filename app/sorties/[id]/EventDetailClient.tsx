@@ -56,6 +56,9 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
         const status = payload.status as string;
         setEv(e => ({ ...e, rsvps: [...e.rsvps.filter(r => r.userId !== me), { userId: me, status }] }));
         await post(payload);
+        // Invalide le Router Cache pour que /sorties et l'accueil reflètent le RSVP
+        // (l'état local `ev` n'est pas réinitialisé : useState n'est seedé qu'une fois).
+        router.refresh();
       } else if (a === "claimNeed") {
         const needId = payload.needId as string;
         setEv(e => ({
