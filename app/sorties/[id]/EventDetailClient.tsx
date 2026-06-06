@@ -635,6 +635,7 @@ function LifeTab({ event, accent, me, memberMap, busy, action, isAdmin }: {
                   <div className="flex flex-col gap-1.5 mt-1">
                     {g.texts.map((t, i) => {
                       const canDelete = mine || event.hostId === me || isAdmin;
+                      const canReport = !mine; // on peut signaler tout message qui n'est pas le sien
                       const isLast = i === g.texts.length - 1;
                       return (
                         <div
@@ -647,21 +648,22 @@ function LifeTab({ event, accent, me, memberMap, busy, action, isAdmin }: {
                           }}
                         >
                           <span className="flex-1 min-w-0 break-words">{t.text}</span>
-                          {canDelete ? (
-                            <button
-                              onClick={() => { if (confirm("Supprimer ce message ?")) action({ action: "deleteComment", commentId: t.id }); }}
-                              aria-label="Supprimer le message"
-                              className="flex-shrink-0 mt-0.5 text-muted-foreground/50 hover:text-destructive transition-colors"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          ) : (
+                          {canReport && (
                             <button
                               onClick={() => { if (confirm("Signaler ce message aux administrateurs ?")) action({ action: "reportComment", commentId: t.id }); }}
                               aria-label="Signaler le message"
                               className="flex-shrink-0 mt-0.5 text-muted-foreground/50 hover:text-busy transition-colors"
                             >
                               <Flag className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => { if (confirm("Supprimer ce message ?")) action({ action: "deleteComment", commentId: t.id }); }}
+                              aria-label="Supprimer le message"
+                              className="flex-shrink-0 mt-0.5 text-muted-foreground/50 hover:text-destructive transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
