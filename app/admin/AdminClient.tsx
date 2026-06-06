@@ -206,13 +206,11 @@ export function AdminClient({ session, members, pendingInvitations, reportedComm
                     </span>
                   </div>
                   <p className="text-body-strong bg-surface rounded-lg px-3 py-2 border border-border break-words">{c.text}</p>
-                  {c.reports.some(r => r.reason) && (
-                    <ul className="text-caption space-y-0.5">
-                      {c.reports.filter(r => r.reason).map((r, i) => (
-                        <li key={i}>↳ {r.reporter.name} : « {r.reason} »</li>
-                      ))}
-                    </ul>
-                  )}
+                  <ul className="text-caption space-y-0.5">
+                    {c.reports.map((r, i) => (
+                      <li key={i}>↳ Signalé par {r.reporter.name}{r.reason ? ` : « ${r.reason} »` : ""}</li>
+                    ))}
+                  </ul>
                   <div className="flex gap-2 pt-0.5">
                     <button
                       onClick={() => handleReport(c.id, "delete")}

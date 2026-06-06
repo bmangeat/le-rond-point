@@ -98,10 +98,34 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     case "reportComment": {
+      // Anti-spam de signalements : vélocité (5 / 5 min) en plus du plafond ci-dessous.
+      if (!rateLimit(`${me}:report`, 5, 5 * 60_000)) {
+        return NextResponse.json({ error: "Trop de signalements d'affilée, réessaie dans quelques minutes." }, { status: 429 });
+      }
+
       const comment = await db.eventComment.findFirst({ where: { id: body.commentId, eventId } });
       if (!comment) return NextResponse.json({ error: "Commentaire introuvable" }, { status: 404 });
+
+      // Si déjà signalé par moi, on met juste à jour le motif (pas de nouvel item).
+      const already = await db.commentReport.findUnique({
+        where: { commentId_reporterId: { commentId: comment.id, reporterId: me } },
+        select: { id: true },
+      });
+
+      // Plafond de signalements en attente par utilisateur : borne ce qu'une
+      // seule personne peut déverser dans la file de modération.
+      const MAX_OPEN_REPORTS = 15;
+      if (!already) {
+        const open = await db.commentReport.count({ where: { reporterId: me } });
+        if (open >= MAX_OPEN_REPORTS) {
+          return NextResponse.json(
+            { error: "Tu as trop de signalements en attente de traitement. Réessaie plus tard." },
+            { status: 429 }
+          );
+        }
+      }
+
       const reason = (body.reason as string)?.trim()?.slice(0, 280) || null;
-      // upsert : un seul signalement par personne et commentaire (pas d'erreur si re-signalé)
       await db.commentReport.upsert({
         where: { commentId_reporterId: { commentId: comment.id, reporterId: me } },
         create: { commentId: comment.id, reporterId: me, reason },
