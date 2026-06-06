@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "le-rond-point",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "/Users/brice/.nvm/versions/node/v18.20.0/bin/node",
+      "runtimeArgs": ["/Users/brice/Documents/Projects/RP/Dev/Le Rond Point/node_modules/.bin/next", "dev"],
       "port": 3000
     }
   ]
