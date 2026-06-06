@@ -141,7 +141,7 @@ const NOTIF_TYPES = [
   { key: "notifPushEvents", title: "Sorties", desc: "Nouvelles sorties et rappel le jour J" },
 ] as const;
 
-export function ProfileClient({ user, memberCount, invitationCount }: { user: ProfileUser; memberCount: number; invitationCount: number }) {
+export function ProfileClient({ user, memberCount, invitationCount, signOutAction }: { user: ProfileUser; memberCount: number; invitationCount: number; signOutAction: () => Promise<void> }) {
   const router = useRouter();
   const color = getMemberColor(user.memberColor);
 
@@ -343,7 +343,7 @@ export function ProfileClient({ user, memberCount, invitationCount }: { user: Pr
         )}
 
         {/* Déconnexion */}
-        <form action="/api/auth/signout" method="POST" className="pt-2">
+        <form action={signOutAction} className="pt-2">
           <button type="submit" className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-destructive text-[15px] font-semibold hover:bg-destructive/5 transition-colors">
             <LogOut className="w-[18px] h-[18px]" />
             Se déconnecter

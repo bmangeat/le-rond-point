@@ -29,5 +29,17 @@ export default async function ProfilePage() {
     ]);
   }
 
-  return <ProfileClient user={user} memberCount={memberCount} invitationCount={invitationCount} />;
+  async function signOutAction() {
+    "use server";
+    await signOut({ redirectTo: "/login" });
+  }
+
+  return (
+    <ProfileClient
+      user={user}
+      memberCount={memberCount}
+      invitationCount={invitationCount}
+      signOutAction={signOutAction}
+    />
+  );
 }
