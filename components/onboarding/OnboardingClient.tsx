@@ -6,6 +6,7 @@ import { Bell, Check } from "lucide-react";
 import { Avatar } from "@/components/shared/Avatar";
 import { cn } from "@/lib/utils";
 import { subscribeToPush } from "@/lib/push-client";
+import { InstallOnboarding } from "@/components/shared/InstallOnboarding";
 
 interface OnboardingClientProps {
   name: string;
@@ -98,6 +99,11 @@ export function OnboardingClient({ name, image, memberColor }: OnboardingClientP
 
   return (
     <div className="min-h-screen bg-background flex flex-col px-7 pt-16 pb-9">
+      {/* Incitation à installer la PWA AVANT l'onboarding (indispensable sur iOS
+          pour que les notifications push fonctionnent). Overlay plein écran qui
+          se masque tout seul si l'app est déjà installée (standalone). */}
+      <InstallOnboarding />
+
       {/* Progression */}
       <div className="flex gap-1.5 mb-9">
         {[0, 1, 2].map((i) => (
