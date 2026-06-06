@@ -6,7 +6,7 @@ import { upload } from "@vercel/blob/client";
 import { Avatar } from "@/components/shared/Avatar";
 import { EventGlyph } from "@/components/events/EventGlyph";
 import { eventType, fmtEventWhen, rsvpCounts, tricountBalances, fmtMoney, mapsUrl, RsvpStatus } from "@/lib/events";
-import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera, Loader2 } from "lucide-react";
+import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera, Loader2, Download } from "lucide-react";
 
 interface Member { id: string; name: string; image?: string | null; memberColor: number; city?: string | null }
 interface EventData {
@@ -523,10 +523,19 @@ function LifeTab({ event, accent, me, memberMap, busy, action, isAdmin }: {
       ) : null}
 
       {/* Photos */}
-      <div className="flex items-baseline justify-between mb-2 px-0.5">
+      <div className="flex items-center justify-between mb-2 px-0.5">
         <div className="text-[15px] font-bold">Photos <span className="text-[12.5px] text-muted-foreground font-medium">{event.photos.length}/{PHOTO_MAX}</span></div>
-        <div className="text-[11.5px] text-busy font-semibold whitespace-nowrap">⏳ Suppr. dans 7 jours</div>
+        {event.photos.length > 0 ? (
+          <a href={`/api/events/${event.id}/photos/zip`} className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: accent }}>
+            <Download className="w-3.5 h-3.5" /> Tout télécharger
+          </a>
+        ) : (
+          <div className="text-[11.5px] text-busy font-semibold whitespace-nowrap">⏳ Suppr. 7j après la sortie</div>
+        )}
       </div>
+      {event.photos.length > 0 && (
+        <p className="text-[11.5px] text-busy font-semibold mb-2 px-0.5">⏳ Supprimées automatiquement 7 jours après la sortie</p>
+      )}
       <div className="grid grid-cols-3 gap-2 mb-5">
         {event.photos.length < PHOTO_MAX && (
           <label className="aspect-square rounded-xl border-[1.5px] border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer"

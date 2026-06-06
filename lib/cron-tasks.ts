@@ -97,11 +97,13 @@ export async function runPresenceReminders() {
   return { present: people.length, sent };
 }
 
-// Auto-destruction des photos de sortie après 7 jours (suppression Blob + DB).
+const PHOTO_TTL_DAYS = 7;
+
+// Auto-destruction des photos 7 jours APRÈS la date de la sortie (Blob + DB).
 export async function runEventPhotoCleanup() {
-  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const cutoff = new Date(Date.now() - PHOTO_TTL_DAYS * 24 * 60 * 60 * 1000);
   const old = await db.eventPhoto.findMany({
-    where: { createdAt: { lt: cutoff } },
+    where: { event: { whenAt: { lt: cutoff } } },
     select: { id: true, url: true },
   });
   if (old.length === 0) return { deleted: 0 };
@@ -113,4 +115,45 @@ export async function runEventPhotoCleanup() {
   }
   await db.eventPhoto.deleteMany({ where: { id: { in: old.map(p => p.id) } } });
   return { deleted: old.length };
+}
+
+// Prévient les participants 1 jour avant la suppression des photos d'une sortie.
+export async function runPhotoExpiryWarnings() {
+  // Sortie dont la date est dans [now-7j, now-6j) : photos supprimées au prochain run (~demain).
+  const lower = new Date(Date.now() - PHOTO_TTL_DAYS * 24 * 60 * 60 * 1000);
+  const upper = new Date(Date.now() - (PHOTO_TTL_DAYS - 1) * 24 * 60 * 60 * 1000);
+
+  const events = await db.event.findMany({
+    where: { whenAt: { gte: lower, lt: upper }, photos: { some: {} } },
+    select: {
+      id: true, name: true,
+      rsvps: { where: { status: "YES" }, select: { userId: true } },
+      photos: { select: { id: true } },
+    },
+  });
+  if (events.length === 0) return { events: 0, sent: 0 };
+
+  // Préférences des participants concernés
+  const ids = Array.from(new Set(events.flatMap(e => e.rsvps.map(r => r.userId))));
+  const users = await db.user.findMany({
+    where: { id: { in: ids }, isActive: true, notifPush: true, notifPushPhotos: true },
+    select: { id: true },
+  });
+  const optedIn = new Set(users.map(u => u.id));
+
+  let sent = 0;
+  for (const ev of events) {
+    const n = ev.photos.length;
+    for (const r of ev.rsvps) {
+      if (!optedIn.has(r.userId)) continue;
+      await sendPushToUser(r.userId, {
+        title: "📸 Sauve les souvenirs !",
+        body: `Les ${n} photo${n > 1 ? "s" : ""} de « ${ev.name} » s'autodétruisent demain. Télécharge-les avant qu'elles partent en fumée 💨`,
+        url: `/sorties/${ev.id}`,
+        tag: `photo-expiry-${ev.id}`,
+      });
+      sent++;
+    }
+  }
+  return { events: events.length, sent };
 }

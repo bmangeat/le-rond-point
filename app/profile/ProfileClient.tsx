@@ -20,6 +20,7 @@ interface ProfileUser {
   notifPushOverlap: boolean;
   notifPushBirthday: boolean;
   notifPushPresence: boolean;
+  notifPushPhotos: boolean;
   memberColor: number;
   role: "ADMIN" | "MEMBER";
   birthday?: string | Date | null;
@@ -42,6 +43,7 @@ interface Draft {
   notifPushOverlap: boolean;
   notifPushBirthday: boolean;
   notifPushPresence: boolean;
+  notifPushPhotos: boolean;
 }
 
 function toDateInput(d?: string | Date | null): string {
@@ -68,6 +70,7 @@ function makeDraft(u: ProfileUser): Draft {
     notifPushOverlap: u.notifPushOverlap,
     notifPushBirthday: u.notifPushBirthday,
     notifPushPresence: u.notifPushPresence,
+    notifPushPhotos: u.notifPushPhotos,
   };
 }
 
@@ -131,6 +134,7 @@ const NOTIF_TYPES = [
   { key: "notifPushOverlap", title: "Chevauchements de présences", desc: "Quelqu'un sera là en même temps que toi" },
   { key: "notifPushBirthday", title: "Anniversaires", desc: "Le jour de l'anniv d'un membre" },
   { key: "notifPushPresence", title: "Nouvelles présences", desc: "Quand quelqu'un ajoute une présence" },
+  { key: "notifPushPhotos", title: "Photos de sortie qui expirent", desc: "1 jour avant la suppression auto des photos" },
 ] as const;
 
 export function ProfileClient({ user, memberCount, invitationCount }: { user: ProfileUser; memberCount: number; invitationCount: number }) {

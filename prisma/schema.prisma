@@ -29,6 +29,7 @@ model User {
   notifPushOverlap  Boolean @default(true)  // chevauchement de présences
   notifPushBirthday Boolean @default(true)  // anniversaires
   notifPushPresence Boolean @default(true)  // nouvelle présence ajoutée
+  notifPushPhotos   Boolean @default(true)  // photos d'une sortie qui expirent
   memberColor   Int         @default(1) // 1-12, assigné auto à l'inscription
   role          Role        @default(MEMBER)
   isActive      Boolean     @default(true) // soft delete
