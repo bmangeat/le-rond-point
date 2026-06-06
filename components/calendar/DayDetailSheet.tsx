@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { X } from "lucide-react";
+import { X, Clock } from "lucide-react";
 import { Avatar } from "@/components/shared/Avatar";
 import { AvailabilityBadge } from "@/components/shared/AvailabilityBadge";
 import { formatDateRange } from "@/lib/utils";
+import { eventType, fmtEventWhen } from "@/lib/events";
 import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
 
 interface DayPresence {
@@ -22,9 +23,19 @@ interface DayPresence {
   };
 }
 
+interface DayEvent {
+  id: string;
+  type: string;
+  name: string;
+  whenAt: string | Date;
+  placeName: string;
+  rsvps: { userId: string; status: string }[];
+}
+
 interface DayDetailSheetProps {
   date: string; // YYYY-MM-DD
   presences: DayPresence[];
+  events?: DayEvent[];
   currentUserId?: string;
   onClose: () => void;
   onAddPresence: (date: string) => void;
@@ -44,6 +55,7 @@ function formatDisplayDate(dateStr: string) {
 export function DayDetailSheet({
   date,
   presences,
+  events = [],
   currentUserId,
   onClose,
   onAddPresence,
@@ -64,9 +76,12 @@ export function DayDetailSheet({
           <div>
             <h2 className="text-heading-2">{formatDisplayDate(date)}</h2>
             <p className="text-caption">
-              {presences.length === 0
+              {presences.length === 0 && events.length === 0
                 ? "Personne au quartier"
-                : `${presences.length} présence${presences.length > 1 ? "s" : ""}`}
+                : [
+                    presences.length > 0 && `${presences.length} présence${presences.length > 1 ? "s" : ""}`,
+                    events.length > 0 && `${events.length} sortie${events.length > 1 ? "s" : ""}`,
+                  ].filter(Boolean).join(" · ")}
             </p>
           </div>
           <button
@@ -79,9 +94,61 @@ export function DayDetailSheet({
 
         {/* List */}
         <div className="overflow-y-auto flex-1 px-5 pb-4 space-y-3">
+          {/* Sorties du jour */}
+          {events.length > 0 && (
+            <div className="space-y-2 pb-1">
+              {events.map((ev) => {
+                const ty = eventType(ev.type);
+                const when = fmtEventWhen(new Date(ev.whenAt));
+                const yesCount = ev.rsvps.filter((r) => r.status === "YES").length;
+                const myStatus = ev.rsvps.find((r) => r.userId === currentUserId)?.status ?? "PENDING";
+                const chip =
+                  myStatus === "YES"
+                    ? { t: "✓ Tu viens", cls: "text-available bg-available-light" }
+                    : myStatus === "NO"
+                    ? { t: "Sans toi", cls: "text-destructive bg-destructive/10" }
+                    : { t: "À répondre", cls: "text-busy bg-busy-light" };
+                return (
+                  <Link
+                    key={ev.id}
+                    href={`/sorties/${ev.id}`}
+                    onClick={onClose}
+                    className="block rounded-2xl border border-border bg-surface p-3 active:scale-[0.99] transition-transform"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-[42px] h-[42px] rounded-xl flex items-center justify-center text-[20px] flex-shrink-0"
+                        style={{ background: ty.tint }}
+                      >
+                        {ty.emoji}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[15px] font-bold tracking-tight truncate flex-1">{ev.name}</span>
+                          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${chip.cls}`}>{chip.t}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground font-medium mt-0.5">
+                          <Clock className="w-3.5 h-3.5" style={{ color: ty.color }} /> {when.time}
+                          {ev.placeName && <span className="truncate">· {ev.placeName}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    {yesCount > 0 && (
+                      <p className="text-[12.5px] font-semibold text-available mt-2">
+                        {yesCount} présent{yesCount > 1 ? "s" : ""}
+                      </p>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
           {presences.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-muted-foreground text-sm">Personne n'est encore prévu ce jour.</p>
+              <p className="text-muted-foreground text-sm">
+                {events.length > 0 ? "Aucune présence prévue ce jour." : "Personne n'est encore prévu ce jour."}
+              </p>
               <button
                 onClick={() => onAddPresence(date)}
                 className="mt-3 text-sm text-primary font-semibold"

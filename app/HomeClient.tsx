@@ -50,6 +50,9 @@ export function HomeClient({ session, presences, myPresencesWithOverlaps, events
   const dayPresences = selectedDate
     ? presences.filter(p => selectedDate >= dayKey(new Date(p.startDate)) && selectedDate <= dayKey(new Date(p.endDate)))
     : [];
+  const dayEvents = selectedDate
+    ? events.filter(ev => dayKey(new Date(ev.whenAt)) === selectedDate)
+    : [];
   const editingPresence = editingId ? presences.find(p => p.id === editingId) : null;
 
   function openAddForm(date?: string) { setFormDefaultDate(date); setEditingId(null); setSelectedDate(null); setShowForm(true); }
@@ -175,6 +178,7 @@ export function HomeClient({ session, presences, myPresencesWithOverlaps, events
         <DayDetailSheet
           date={selectedDate}
           presences={dayPresences}
+          events={dayEvents}
           currentUserId={me}
           onClose={() => setSelectedDate(null)}
           onAddPresence={(date) => { setSelectedDate(null); openAddForm(date); }}
