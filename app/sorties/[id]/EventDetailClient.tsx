@@ -226,7 +226,8 @@ function ParticipantsTab({ event, accent, me, myStatus, statusOf, members, membe
         <div className="flex gap-2.5 my-4">
           <button onClick={sayYes} disabled={busy} className="flex-1 py-3.5 rounded-2xl font-bold text-[15.5px] bg-surface border-[1.5px] flex items-center justify-center gap-2 disabled:opacity-60"
             style={{ color: "#10B981", borderColor: "#10B981" }}>👍 Je viens</button>
-          <button onClick={() => setAlsace(true)} disabled={busy} className="flex-1 py-3.5 rounded-2xl font-bold text-[15.5px] text-muted-foreground bg-surface border-[1.5px] border-border flex items-center justify-center gap-2">👎 Sans moi</button>
+          <button onClick={() => setAlsace(true)} disabled={busy} className="flex-1 py-3.5 rounded-2xl font-bold text-[15.5px] bg-surface border-[1.5px] flex items-center justify-center gap-2 disabled:opacity-60"
+            style={{ color: "#EF4444", borderColor: "#EF4444" }}>👎 Sans moi</button>
         </div>
       ) : (
         <div className="flex items-center gap-3 my-4 px-3.5 py-3 rounded-2xl border"
