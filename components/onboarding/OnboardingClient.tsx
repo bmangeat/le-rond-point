@@ -1,0 +1,251 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Avatar } from "@/components/shared/Avatar";
+import { cn } from "@/lib/utils";
+
+interface OnboardingClientProps {
+  name: string;
+  image?: string | null;
+  memberColor: number;
+}
+
+export function OnboardingClient({ name, image, memberColor }: OnboardingClientProps) {
+  const router = useRouter();
+  const today = new Date().toISOString().split("T")[0];
+  const firstName = name.split(" ")[0];
+
+  const [step, setStep] = useState<0 | 1>(0);
+
+  // Étape 1
+  const [city, setCity] = useState("");
+  const [birthday, setBirthday] = useState("");
+
+  // Étape 2
+  const [hasNoDate, setHasNoDate] = useState(false);
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
+  const [availability, setAvailability] = useState<"OPEN" | "BUSY">("OPEN");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function goToStep2() {
+    setStep(1);
+  }
+
+  async function finish() {
+    setError(null);
+
+    if (!hasNoDate && endDate < startDate) {
+      setError("La date de départ doit être après l'arrivée.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 1) Profil + onboardedAt
+      const res = await fetch("/api/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ city, birthday: birthday || null }),
+      });
+      if (!res.ok) throw new Error("Erreur lors de l'enregistrement du profil");
+
+      // 2) Première présence (optionnelle)
+      if (!hasNoDate) {
+        const presRes = await fetch("/api/presences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ startDate, endDate, availability, note: null }),
+        });
+        if (!presRes.ok) throw new Error("Erreur lors de la création de la présence");
+      }
+
+      router.replace("/");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inconnue");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col px-7 pt-16 pb-9">
+      {/* Progression */}
+      <div className="flex gap-1.5 mb-9">
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            className="flex-1 h-1.5 rounded-full transition-colors"
+            style={{ background: i <= step ? "#3B7BF8" : "#E2E8F0" }}
+          />
+        ))}
+      </div>
+
+      {step === 0 ? (
+        /* ─── ÉTAPE 1 ─── */
+        <div className="flex-1 flex flex-col">
+          <p className="text-primary font-semibold mb-2" style={{ fontSize: 13 }}>
+            ÉTAPE 1 / 2
+          </p>
+          <h1
+            className="text-foreground"
+            style={{ fontSize: 27, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.15 }}
+          >
+            Bienvenue, {firstName} !
+          </h1>
+          <p className="text-muted-foreground mt-2.5 leading-relaxed" style={{ fontSize: 15 }}>
+            D'où nous rejoins-tu aujourd'hui ? Ta ville et ton anniversaire s'afficheront sur ton profil.
+          </p>
+
+          <div className="mt-8 flex justify-center mb-6">
+            <Avatar name={name} image={image} memberColor={memberColor} size="xl" />
+          </div>
+
+          <label className="text-label block mb-1.5">Ville de résidence actuelle</label>
+          <input
+            autoFocus
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="Ex. Lyon, Berlin, Montréal…"
+            className="w-full px-3.5 py-3 rounded-xl border border-border bg-surface text-base outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          />
+
+          <label className="text-label block mb-1.5 mt-4">
+            Date d'anniversaire <span className="normal-case font-normal text-muted-foreground">(optionnel)</span>
+          </label>
+          <input
+            type="date"
+            value={birthday}
+            max={today}
+            onChange={(e) => setBirthday(e.target.value)}
+            className="w-full px-3.5 py-3 rounded-xl border border-border bg-surface text-base outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          />
+        </div>
+      ) : (
+        /* ─── ÉTAPE 2 ─── */
+        <div className="flex-1 flex flex-col">
+          <p className="text-primary font-semibold mb-2" style={{ fontSize: 13 }}>
+            ÉTAPE 2 / 2
+          </p>
+          <h1
+            className="text-foreground"
+            style={{ fontSize: 27, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.15 }}
+          >
+            Ta première présence
+          </h1>
+          <p className="text-muted-foreground mt-2.5 leading-relaxed" style={{ fontSize: 15 }}>
+            Quand penses-tu repasser au quartier ? Tu pourras la modifier à tout moment.
+          </p>
+
+          <div className={cn("mt-6 transition-opacity", hasNoDate && "opacity-40 pointer-events-none")}>
+            <div className="flex gap-2.5 mb-4">
+              <div className="flex-1">
+                <label className="text-label block mb-1.5">Arrivée</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    if (endDate < e.target.value) setEndDate(e.target.value);
+                  }}
+                  className="w-full px-3 py-3 rounded-xl border border-border bg-surface text-base outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-label block mb-1.5">Départ</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-3 py-3 rounded-xl border border-border bg-surface text-base outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <label className="text-label block mb-2">Disponibilité</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["OPEN", "BUSY"] as const).map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setAvailability(val)}
+                  className={cn(
+                    "px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all text-left",
+                    availability === val
+                      ? val === "OPEN"
+                        ? "border-available bg-available-light text-available"
+                        : "border-busy bg-busy-light text-busy"
+                      : "border-border text-muted-foreground hover:border-border/80"
+                  )}
+                >
+                  {val === "OPEN" ? (
+                    <><span className="block font-semibold">Ouvert</span><span className="text-xs opacity-80">Dispo pour se voir</span></>
+                  ) : (
+                    <><span className="block font-semibold">Passage rapide</span><span className="text-xs opacity-80">Peu disponible</span></>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Pas de date prévue */}
+          <button
+            type="button"
+            onClick={() => setHasNoDate((v) => !v)}
+            className={cn(
+              "mt-4 w-full px-4 py-3.5 rounded-xl border-2 text-sm font-medium transition-all flex items-center gap-3 text-left",
+              hasNoDate
+                ? "border-primary bg-primary/5 text-primary"
+                : "border-border text-muted-foreground hover:border-border/80"
+            )}
+          >
+            <span
+              className={cn(
+                "w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0",
+                hasNoDate ? "border-primary bg-primary" : "border-border"
+              )}
+            >
+              {hasNoDate && (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              )}
+            </span>
+            Je n'ai pas encore de date prévue
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2 mb-3">
+          {error}
+        </p>
+      )}
+
+      {/* Boutons bas */}
+      <div className="flex gap-2.5 items-center">
+        {step === 1 && (
+          <button
+            type="button"
+            onClick={() => setStep(0)}
+            className="px-5 py-3.5 rounded-full text-muted-foreground font-semibold text-sm"
+          >
+            Retour
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={step === 0 ? goToStep2 : finish}
+          disabled={loading}
+          className="flex-1 py-3.5 rounded-full bg-primary text-white font-semibold text-sm shadow-primary active:scale-[0.98] transition-transform disabled:opacity-60"
+        >
+          {step === 0 ? "Continuer" : loading ? "Un instant…" : "C'est parti !"}
+        </button>
+      </div>
+    </div>
+  );
+}

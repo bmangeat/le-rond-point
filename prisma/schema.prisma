@@ -34,6 +34,7 @@ model User {
   memberColor   Int         @default(1) // 1-12, assigné auto à l'inscription
   role          Role        @default(MEMBER)
   isActive      Boolean     @default(true) // soft delete
+  onboardedAt   DateTime?   // null = onboarding pas encore complété (1ère connexion)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 

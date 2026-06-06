@@ -7,6 +7,13 @@ export default async function HomePage() {
   const session = await auth();
   if (!session) redirect("/login");
 
+  // Première connexion → onboarding (onboardedAt null)
+  const me = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { onboardedAt: true },
+  });
+  if (me && !me.onboardedAt) redirect("/onboarding");
+
   // Charger toutes les présences futures + en cours
   const today = new Date();
   today.setHours(0, 0, 0, 0);
