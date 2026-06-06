@@ -49,7 +49,7 @@ npm run dev            # http://localhost:3000
 - NextAuth : Account, Session, VerificationToken.
 
 ## Features implémentées
-- **Accueil/calendrier** (`app/page.tsx` + `HomeClient.tsx`) : header logo, bannière push (`PushPrompt`), carte « présent aujourd'hui » (`TodayPresenceToggle` + `/api/presences/today`), « tes prochaines présences » + chevauchements, strip « prochaines sorties », grille mensuelle (badges présences + pastilles événements par type), timeline « qui est là en {mois} ».
+- **Accueil/calendrier** (`app/page.tsx` + `HomeClient.tsx`) : header logo, bannière push (`PushPrompt`). Sections dans l'ordre : (1) carte « présent aujourd'hui » (`TodayPresenceToggle` + `/api/presences/today`), (2) grille mensuelle (badges présences + pastilles événements par type), (3) timeline « qui est là en {mois} » — **une ligne par membre**, segments multiples sur la même barre, dates toujours visibles (dans la barre si assez large, sinon en pastille au-dessus), (4) strip « prochaines sorties », (5) « tes prochaines présences » + chevauchements.
 - **Présences** (`/presences`) : filtre par membre, séparateurs par mois, section « Aujourd'hui », anciennes présences.
 - **Profil** (`/profile`) : sections accordéon (infos, réseaux préfixés @, notifications), photo upload (Blob), barre « Enregistrer » dirty, lien Admin, déconnexion. Pages membres en lecture : `/membres/[id]`.
 - **Admin** (`/admin`) : invitations (email + lien à usage unique), gestion membres (rôle Membre/Admin via fiche, retrait).
