@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
 // POST /api/events/:id/actions — mutations du hub événement
@@ -78,8 +79,22 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     case "addPhoto": {
       const url = (body.url as string)?.trim();
       if (!url) return NextResponse.json({ error: "URL manquante" }, { status: 400 });
+      const count = await db.eventPhoto.count({ where: { eventId } });
+      if (count >= 5) return NextResponse.json({ error: "Limite de 5 photos atteinte" }, { status: 409 });
       const photo = await db.eventPhoto.create({ data: { eventId, uploaderId: me, url } });
       return NextResponse.json({ ok: true, photo });
+    }
+
+    case "deletePhoto": {
+      const photo = await db.eventPhoto.findFirst({ where: { id: body.photoId, eventId } });
+      if (!photo) return NextResponse.json({ error: "Photo introuvable" }, { status: 404 });
+      // Autorisé : le posteur, l'hôte de la sortie, ou un admin
+      const myUser = await db.user.findUnique({ where: { id: me }, select: { role: true } });
+      const allowed = photo.uploaderId === me || event.hostId === me || myUser?.role === "ADMIN";
+      if (!allowed) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+      try { await del(photo.url); } catch (e) { console.error("Blob del:", e); }
+      await db.eventPhoto.delete({ where: { id: photo.id } });
+      return NextResponse.json({ ok: true });
     }
 
     default:

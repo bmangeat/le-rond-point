@@ -20,17 +20,20 @@ export default async function EventPage({ params }: { params: { id: string } }) 
     }),
     db.user.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, image: true, memberColor: true, city: true },
+      select: { id: true, name: true, image: true, memberColor: true, city: true, role: true },
     }),
   ]);
 
   if (!event) notFound();
+
+  const isAdmin = members.find(m => m.id === session.user.id)?.role === "ADMIN";
 
   return (
     <EventDetailClient
       event={JSON.parse(JSON.stringify(event))}
       members={members}
       currentUserId={session.user.id}
+      isAdmin={isAdmin}
     />
   );
 }

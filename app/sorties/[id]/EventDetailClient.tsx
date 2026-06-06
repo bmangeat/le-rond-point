@@ -22,7 +22,7 @@ interface EventData {
 
 type Tab = "people" | "logistics" | "life";
 
-export function EventDetailClient({ event, members, currentUserId }: { event: EventData; members: Member[]; currentUserId: string }) {
+export function EventDetailClient({ event, members, currentUserId, isAdmin }: { event: EventData; members: Member[]; currentUserId: string; isAdmin: boolean }) {
   const router = useRouter();
   const ty = eventType(event.type);
   const accent = ty.color;
@@ -82,6 +82,10 @@ export function EventDetailClient({ event, members, currentUserId }: { event: Ev
       } else if (a === "addPhoto") {
         const { photo } = await post(payload);
         setEv(e => ({ ...e, photos: [{ id: photo.id, uploaderId: photo.uploaderId, url: photo.url, createdAt: photo.createdAt }, ...e.photos] }));
+      } else if (a === "deletePhoto") {
+        const photoId = payload.photoId as string;
+        setEv(e => ({ ...e, photos: e.photos.filter(p => p.id !== photoId) }));
+        await post(payload);
       }
     } catch (e) {
       alert(e instanceof Error ? e.message : "Erreur");
@@ -163,7 +167,7 @@ export function EventDetailClient({ event, members, currentUserId }: { event: Ev
             ? <TricountPanel event={ev} accent={accent} me={me} memberMap={memberMap} statusOf={statusOf} busy={busy} action={action} />
             : <NeedsPanel event={ev} accent={accent} me={me} memberMap={memberMap} busy={busy} action={action} />
         )}
-        {tab === "life" && <LifeTab event={ev} accent={accent} me={me} memberMap={memberMap} busy={busy} action={action} />}
+        {tab === "life" && <LifeTab event={ev} accent={accent} me={me} memberMap={memberMap} busy={busy} action={action} isAdmin={isAdmin} />}
       </div>
     </div>
   );
@@ -453,13 +457,15 @@ function TricountPanel({ event, accent, me, memberMap, statusOf, busy, action }:
 }
 
 // ── Onglet 3 : le fil ──
-function LifeTab({ event, accent, me, memberMap, busy, action }: {
-  event: EventData; accent: string; me: string; memberMap: Map<string, Member>; busy: boolean; action: (p: Record<string, unknown>) => Promise<void>;
+function LifeTab({ event, accent, me, memberMap, busy, action, isAdmin }: {
+  event: EventData; accent: string; me: string; memberMap: Map<string, Member>; busy: boolean; action: (p: Record<string, unknown>) => Promise<void>; isAdmin: boolean;
 }) {
   const [msg, setMsg] = useState("");
   const [plInput, setPlInput] = useState("");
   const [uploading, setUploading] = useState(false);
   const isHost = event.hostId === me;
+  const PHOTO_MAX = 5;
+  const canDeletePhoto = (uploaderId: string) => uploaderId === me || isHost || isAdmin;
   const canPlaylist = eventType(event.type).logistics === "list"; // soirée / sortie
 
   function send() {
@@ -518,16 +524,18 @@ function LifeTab({ event, accent, me, memberMap, busy, action }: {
 
       {/* Photos */}
       <div className="flex items-baseline justify-between mb-2 px-0.5">
-        <div className="text-[15px] font-bold">Photos</div>
+        <div className="text-[15px] font-bold">Photos <span className="text-[12.5px] text-muted-foreground font-medium">{event.photos.length}/{PHOTO_MAX}</span></div>
         <div className="text-[11.5px] text-busy font-semibold whitespace-nowrap">⏳ Suppr. dans 7 jours</div>
       </div>
       <div className="grid grid-cols-3 gap-2 mb-5">
-        <label className="aspect-square rounded-xl border-[1.5px] border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer"
-          style={{ borderColor: `${accent}80`, background: `${accent}0f`, color: accent }}>
-          {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
-          <span className="text-[11px] font-semibold">{uploading ? "Envoi…" : "Ajouter"}</span>
-          <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} disabled={uploading} />
-        </label>
+        {event.photos.length < PHOTO_MAX && (
+          <label className="aspect-square rounded-xl border-[1.5px] border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer"
+            style={{ borderColor: `${accent}80`, background: `${accent}0f`, color: accent }}>
+            {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+            <span className="text-[11px] font-semibold">{uploading ? "Envoi…" : "Ajouter"}</span>
+            <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} disabled={uploading} />
+          </label>
+        )}
         {event.photos.map(p => {
           const m = memberMap.get(p.uploaderId);
           return (
@@ -537,10 +545,22 @@ function LifeTab({ event, accent, me, memberMap, busy, action }: {
               <div className="absolute left-1 bottom-1 ring-2 ring-white/80 rounded-full">
                 <Avatar name={m?.name ?? "?"} image={m?.image} memberColor={m?.memberColor ?? 1} size="sm" />
               </div>
+              {canDeletePhoto(p.uploaderId) && (
+                <button
+                  onClick={() => { if (confirm("Supprimer cette photo ?")) action({ action: "deletePhoto", photoId: p.id }); }}
+                  aria-label="Supprimer la photo"
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/55 text-white flex items-center justify-center backdrop-blur-sm"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           );
         })}
       </div>
+      {event.photos.length >= PHOTO_MAX && (
+        <p className="text-caption -mt-3 mb-5 px-0.5">Limite de {PHOTO_MAX} photos atteinte. Supprimes-en une pour en ajouter.</p>
+      )}
 
       {/* Discussion */}
       <div className="text-[15px] font-bold mb-2.5 px-0.5">Discussion</div>
