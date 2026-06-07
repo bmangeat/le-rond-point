@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
-  const { city, birthday } = await req.json();
+  const { city, birthday, isResident } = await req.json();
 
   const clean = (v: unknown) =>
     typeof v === "string" ? (v.trim() === "" ? null : v.trim()) : null;
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
     data: {
       city: clean(city),
       birthday: birthday ? new Date(birthday) : null,
+      isResident: typeof isResident === "boolean" ? isResident : false,
       onboardedAt: new Date(),
     },
     select: { id: true },

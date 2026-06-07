@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Check } from "lucide-react";
+import { Bell, Check, Home } from "lucide-react";
 import { Avatar } from "@/components/shared/Avatar";
 import { cn } from "@/lib/utils";
 import { subscribeToPush } from "@/lib/push-client";
@@ -26,6 +26,7 @@ export function OnboardingClient({ name, image, memberColor }: OnboardingClientP
   // Étape 1 — profil
   const [city, setCity] = useState("");
   const [birthday, setBirthday] = useState("");
+  const [isResident, setIsResident] = useState(false);
 
   // Étape 2 — notifications
   const [notifBusy, setNotifBusy] = useState(false);
@@ -75,7 +76,7 @@ export function OnboardingClient({ name, image, memberColor }: OnboardingClientP
       const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ city, birthday: birthday || null }),
+        body: JSON.stringify({ city, birthday: birthday || null, isResident }),
       });
       if (!res.ok) throw new Error("Erreur lors de l'enregistrement du profil");
 
@@ -154,6 +155,35 @@ export function OnboardingClient({ name, image, memberColor }: OnboardingClientP
             onChange={(e) => setBirthday(e.target.value)}
             className="w-full px-3.5 py-3 rounded-xl border border-border bg-surface text-base outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
+
+          {/* Statut résident */}
+          <button
+            type="button"
+            onClick={() => setIsResident((v) => !v)}
+            className={cn(
+              "mt-4 w-full px-4 py-3.5 rounded-xl border-2 transition-all flex items-start gap-3 text-left",
+              isResident ? "border-available bg-available-light" : "border-border hover:border-border/80"
+            )}
+          >
+            <span className={cn(
+              "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0",
+              isResident ? "bg-available text-white" : "bg-muted text-muted-foreground"
+            )}>
+              <Home className="w-[18px] h-[18px]" />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold text-foreground">Je suis un local 🏠</span>
+              <span className="block text-xs text-muted-foreground mt-0.5 leading-snug">
+                Tu habites au quartier ou à moins de 15 min&nbsp;? Sois prévenu des passages et invité d&apos;office aux sorties.
+              </span>
+            </span>
+            <span className={cn(
+              "w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5",
+              isResident ? "border-available bg-available" : "border-border"
+            )}>
+              {isResident && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+            </span>
+          </button>
         </div>
       ) : step === 1 ? (
         /* ─── ÉTAPE 2 — NOTIFICATIONS ─── */
