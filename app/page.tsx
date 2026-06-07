@@ -37,7 +37,7 @@ export default async function HomePage() {
       where: { whenAt: { gte: todayStart } },
       orderBy: { whenAt: "asc" },
       select: {
-        id: true, type: true, name: true, whenAt: true, placeName: true,
+        id: true, type: true, name: true, whenAt: true, placeName: true, cancelledAt: true,
         rsvps: { select: { userId: true, status: true } },
       },
     }),

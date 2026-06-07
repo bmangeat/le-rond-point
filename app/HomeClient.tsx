@@ -17,7 +17,7 @@ import type { Session } from "next-auth";
 
 interface PUser { id: string; name: string; image?: string | null; city?: string | null; memberColor: number; isResident?: boolean }
 interface Presence { id: string; startDate: string; endDate: string; note?: string | null; availability: "OPEN" | "BUSY"; userId: string; user: PUser }
-interface EventLite { id: string; type: string; name: string; whenAt: string; placeName: string; rsvps: { userId: string; status: string }[] }
+interface EventLite { id: string; type: string; name: string; whenAt: string; placeName: string; cancelledAt: string | null; rsvps: { userId: string; status: string }[] }
 interface Resident { id: string; name: string; image?: string | null; city?: string | null; memberColor: number }
 
 interface HomeClientProps {
@@ -141,7 +141,9 @@ export function HomeClient({ session, presences, myPresencesWithOverlaps, events
                 const ty = eventType(ev.type);
                 const when = fmtEventWhen(new Date(ev.whenAt));
                 const status = ev.rsvps.find(r => r.userId === me)?.status ?? "PENDING";
-                const chip = status === "YES" ? { t: "✓ Tu viens", c: "text-available bg-available-light" }
+                const chip = ev.cancelledAt
+                  ? { t: "Annulée", c: "text-muted-foreground bg-border" }
+                  : status === "YES" ? { t: "✓ Tu viens", c: "text-available bg-available-light" }
                   : status === "NO" ? { t: "Sans toi", c: "text-destructive bg-destructive/10" }
                   : { t: "À répondre", c: "text-busy bg-busy-light" };
                 return (
