@@ -11,7 +11,13 @@ export function FullPageLoader() {
         src="/logo-animated.svg"
         alt="Chargement…"
         aria-hidden="true"
-        className="w-[55vw] max-w-[320px] aspect-square -translate-y-[3.5vh]"
+        className="w-[55vw] max-w-[320px] aspect-square"
+        // Remonte le logo de la moitié des zones sûres (status bar + home
+        // indicator) pour s'aligner sur la splash, en s'adaptant à chaque modèle.
+        style={{
+          transform:
+            "translateY(calc((env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)) / -2))",
+        }}
       />
     </div>
   );
