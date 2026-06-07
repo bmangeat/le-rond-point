@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EVENT_TYPES, EVENT_TYPE_ORDER, EventTypeKey, fmtEventWhen } from "@/lib/events";
-import { X, Search, MapPin, Clock, Check, Ban, RotateCcw } from "lucide-react";
+import { X, Search, MapPin, Clock, Check, Ban, RotateCcw, Trash2 } from "lucide-react";
 
 const PLACE_SUGGESTIONS = [
   { name: "Le Hopper", addr: "8 rue Oberkampf, 75011 Paris" },
@@ -26,7 +26,7 @@ function toLocalInput(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function EditEventClient({ event }: { event: EventData }) {
+export function EditEventClient({ event, isAdmin = false }: { event: EventData; isAdmin?: boolean }) {
   const router = useRouter();
   const [type, setType] = useState<EventTypeKey>(event.type as EventTypeKey);
   const [name, setName] = useState(event.name);
@@ -57,6 +57,22 @@ export function EditEventClient({ event }: { event: EventData }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       router.push(`/sorties/${event.id}`);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+      setCancelBusy(false);
+    }
+  }
+
+  async function deleteEvent() {
+    if (!confirm("Supprimer DÉFINITIVEMENT cette sortie ? Les réponses, besoins, dépenses, commentaires et photos seront perdus. Cette action est irréversible.")) return;
+    setCancelBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/events/${event.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      router.push("/sorties");
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
@@ -266,6 +282,17 @@ export function EditEventClient({ event }: { event: EventData }) {
                 </button>
               </div>
             </div>
+          )}
+
+          {/* Suppression définitive — admin uniquement */}
+          {isAdmin && (
+            <button
+              onClick={deleteEvent}
+              disabled={cancelBusy}
+              className="mt-3 w-full py-3 rounded-xl text-destructive font-semibold text-sm flex items-center justify-center gap-2 hover:bg-destructive/10 transition-colors disabled:opacity-60"
+            >
+              <Trash2 className="w-4 h-4" /> Supprimer définitivement (admin)
+            </button>
           )}
         </div>
       </div>

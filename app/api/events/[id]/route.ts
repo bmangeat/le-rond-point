@@ -1,7 +1,9 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { EVENT_TYPES, EventTypeKey, eventType } from "@/lib/events";
+import { getAdminSession } from "@/lib/admin";
 
 // PATCH /api/events/:id — éditer une sortie (hôte ou admin)
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
@@ -36,6 +38,29 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...(playlistUrl !== undefined && { playlistUrl: playlistUrl?.trim() || null }),
     },
   });
+
+  return NextResponse.json({ ok: true });
+}
+
+// DELETE /api/events/:id — supprimer définitivement une sortie (admin uniquement).
+// Les RSVP/besoins/dépenses/commentaires sont supprimés en cascade (schéma) ;
+// on nettoie en plus les photos stockées sur Vercel Blob.
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  const session = await getAdminSession();
+  if (!session) return NextResponse.json({ error: "Réservé aux admins" }, { status: 403 });
+
+  const event = await db.event.findUnique({
+    where: { id: params.id },
+    select: { id: true, photos: { select: { url: true } } },
+  });
+  if (!event) return NextResponse.json({ error: "Sortie introuvable" }, { status: 404 });
+
+  // Supprimer les blobs des photos (best-effort)
+  for (const p of event.photos) {
+    try { await del(p.url); } catch (e) { console.error("Blob del:", e); }
+  }
+
+  await db.event.delete({ where: { id: event.id } });
 
   return NextResponse.json({ ok: true });
 }

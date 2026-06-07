@@ -13,8 +13,9 @@ export default async function EditEventPage({ params }: { params: { id: string }
   ]);
   if (!event) notFound();
 
-  const allowed = event.hostId === session.user.id || me?.role === "ADMIN";
+  const isAdmin = me?.role === "ADMIN";
+  const allowed = event.hostId === session.user.id || isAdmin;
   if (!allowed) redirect(`/sorties/${params.id}`);
 
-  return <EditEventClient event={JSON.parse(JSON.stringify(event))} />;
+  return <EditEventClient event={JSON.parse(JSON.stringify(event))} isAdmin={isAdmin} />;
 }
