@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EVENT_TYPES, EVENT_TYPE_ORDER, EventTypeKey, fmtEventWhen } from "@/lib/events";
-import { X, Search, MapPin, Clock, Check } from "lucide-react";
+import { X, Search, MapPin, Clock, Check, Ban, RotateCcw } from "lucide-react";
 
 const PLACE_SUGGESTIONS = [
   { name: "Le Hopper", addr: "8 rue Oberkampf, 75011 Paris" },
@@ -17,6 +17,7 @@ interface Place { name: string; addr: string | null }
 interface EventData {
   id: string; type: string; name: string; description?: string | null; whenAt: string;
   placeName: string; placeAddr?: string | null; tricountEnabled: boolean; playlistUrl?: string | null;
+  cancelledAt?: string | null; cancelReason?: string | null;
 }
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
@@ -37,6 +38,51 @@ export function EditEventClient({ event }: { event: EventData }) {
   const [playlistUrl, setPlaylistUrl] = useState(event.playlistUrl ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Annulation
+  const [isCancelled, setIsCancelled] = useState(!!event.cancelledAt);
+  const [showCancel, setShowCancel] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelBusy, setCancelBusy] = useState(false);
+
+  async function cancelEvent() {
+    setCancelBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/events/${event.id}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cancelled: true, reason: cancelReason.trim() || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      router.push(`/sorties/${event.id}`);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+      setCancelBusy(false);
+    }
+  }
+
+  async function reactivateEvent() {
+    setCancelBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/events/${event.id}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cancelled: false }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setIsCancelled(false);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setCancelBusy(false);
+    }
+  }
 
   const meta = EVENT_TYPES[type];
   const accent = meta.color;
@@ -161,6 +207,67 @@ export function EditEventClient({ event }: { event: EventData }) {
         )}
 
         {error && <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2 mt-4">{error}</p>}
+
+        {/* Zone d'annulation */}
+        <div className="mt-8 pt-5 border-t border-border">
+          {isCancelled ? (
+            <div className="rounded-2xl border-[1.5px] border-destructive/30 bg-destructive/5 p-4">
+              <p className="text-[14px] font-bold text-destructive flex items-center gap-1.5">
+                <Ban className="w-4 h-4" /> Sortie annulée
+              </p>
+              <p className="text-[12.5px] text-muted-foreground mt-1">
+                Elle reste visible (grisée) jusqu&apos;à sa date. Tu peux la réactiver.
+              </p>
+              <button
+                onClick={reactivateEvent}
+                disabled={cancelBusy}
+                className="mt-3 w-full py-2.5 rounded-xl border-[1.5px] border-border bg-surface text-foreground font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <RotateCcw className="w-4 h-4" /> {cancelBusy ? "…" : "Réactiver la sortie"}
+              </button>
+            </div>
+          ) : !showCancel ? (
+            <button
+              onClick={() => setShowCancel(true)}
+              className="w-full py-3 rounded-xl text-destructive bg-destructive/10 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-destructive/15 transition-colors"
+            >
+              <Ban className="w-4 h-4" /> Annuler la sortie
+            </button>
+          ) : (
+            <div className="rounded-2xl border-[1.5px] border-destructive/30 bg-destructive/5 p-4">
+              <p className="text-[14px] font-bold text-destructive flex items-center gap-1.5 mb-1">
+                <Ban className="w-4 h-4" /> Annuler la sortie ?
+              </p>
+              <p className="text-[12.5px] text-muted-foreground mb-3">
+                Les participants ayant répondu « Je viens » seront prévenus. Précise le motif (optionnel) — il sera inclus dans la notification.
+              </p>
+              <textarea
+                value={cancelReason}
+                onChange={e => setCancelReason(e.target.value)}
+                maxLength={500}
+                rows={2}
+                placeholder="Ex. météo, trop peu de monde, imprévu…"
+                className="w-full box-border px-3.5 py-3 rounded-xl border-[1.5px] border-border bg-surface text-[14.5px] outline-none focus:border-destructive resize-none"
+              />
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={() => { setShowCancel(false); setCancelReason(""); }}
+                  disabled={cancelBusy}
+                  className="flex-1 py-2.5 rounded-xl border-[1.5px] border-border bg-surface text-muted-foreground font-semibold text-sm disabled:opacity-60"
+                >
+                  Retour
+                </button>
+                <button
+                  onClick={cancelEvent}
+                  disabled={cancelBusy}
+                  className="flex-1 py-2.5 rounded-xl bg-destructive text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  <Ban className="w-4 h-4" /> {cancelBusy ? "Annulation…" : "Confirmer l'annulation"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex-shrink-0 px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] border-t border-border bg-surface">

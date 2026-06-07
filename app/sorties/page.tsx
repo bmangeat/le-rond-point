@@ -57,14 +57,21 @@ export default async function SortiesPage() {
               const yes = ev.rsvps.filter(r => r.status === "YES").map(r => r.user);
               const myStatus = ev.rsvps.find(r => r.userId === session.user.id)?.status ?? "PENDING";
               const chip = STATUS_CHIP[myStatus];
+              const cancelled = !!ev.cancelledAt;
               return (
-                <Link key={ev.id} href={`/sorties/${ev.id}`} className="card block">
+                <Link key={ev.id} href={`/sorties/${ev.id}`} className={`card block ${cancelled ? "opacity-60" : ""}`}>
                   <div className="flex items-center gap-3">
-                    <EventGlyph type={ev.type} size={50} radius={15} />
+                    <div className={cancelled ? "grayscale" : ""}>
+                      <EventGlyph type={ev.type} size={50} radius={15} />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[16px] font-bold tracking-tight truncate flex-1">{ev.name}</span>
-                        <span className={`text-[11.5px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${chip.cls}`}>{chip.t}</span>
+                        <span className={`text-[16px] font-bold tracking-tight truncate flex-1 ${cancelled ? "line-through text-muted-foreground" : ""}`}>{ev.name}</span>
+                        {cancelled ? (
+                          <span className="text-[11.5px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 text-destructive bg-destructive/10">Annulée</span>
+                        ) : (
+                          <span className={`text-[11.5px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${chip.cls}`}>{chip.t}</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-medium mt-1">
                         <Clock className="w-3.5 h-3.5" style={{ color: ty.color }} /> {when.short}

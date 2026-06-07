@@ -8,13 +8,14 @@ import { EventGlyph } from "@/components/events/EventGlyph";
 import { eventType, fmtEventWhen, rsvpCounts, tricountBalances, fmtMoney, mapsUrl, RsvpStatus } from "@/lib/events";
 import { getMemberColor, hexA } from "@/lib/utils";
 import Link from "next/link";
-import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera, Loader2, Download, CalendarPlus, Pencil, Trash2, Flag } from "lucide-react";
+import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera, Loader2, Download, CalendarPlus, Pencil, Trash2, Flag, Ban } from "lucide-react";
 
 interface Member { id: string; name: string; image?: string | null; memberColor: number; city?: string | null }
 interface EventData {
   id: string; type: string; name: string; description?: string | null; whenAt: string;
   placeName: string; placeAddr?: string | null; hostId: string;
   logisticsKind: string; tricountEnabled: boolean; hasPlaylist: boolean; playlistUrl?: string | null;
+  cancelledAt?: string | null; cancelReason?: string | null;
   rsvps: { userId: string; status: string }[];
   needs: { id: string; label: string; claimedById: string | null }[];
   expenses: { id: string; payerId: string; label: string; amount: number; forUserIds: string[] }[];
@@ -30,6 +31,7 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
   const accent = ty.color;
   const me = currentUserId;
   const when = fmtEventWhen(new Date(event.whenAt));
+  const cancelled = !!event.cancelledAt;
   const memberMap = useMemo(() => new Map(members.map(m => [m.id, m])), [members]);
   const host = memberMap.get(event.hostId);
 
@@ -132,6 +134,16 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
 
       {/* En-tête */}
       <div className="flex-shrink-0 px-4 pt-2.5 pb-3">
+        {cancelled && (
+          <div className="mb-3 rounded-2xl border-[1.5px] border-destructive/30 bg-destructive/5 px-3.5 py-3">
+            <p className="text-[14px] font-bold text-destructive flex items-center gap-1.5">
+              <Ban className="w-4 h-4" /> Sortie annulée
+            </p>
+            {event.cancelReason && (
+              <p className="text-[13px] text-foreground mt-1 leading-snug">{event.cancelReason}</p>
+            )}
+          </div>
+        )}
         <div className="flex items-center gap-3.5 mb-3">
           <EventGlyph type={event.type} size={62} radius={18} />
           <div className="flex-1 min-w-0">
