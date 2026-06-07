@@ -8,10 +8,10 @@ export function FullPageLoader() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/logo.svg"
+        src="/logo-animated.svg"
         alt="Chargement…"
         aria-hidden="true"
-        className="w-[55vw] max-w-[320px] aspect-square animate-pulse"
+        className="w-[55vw] max-w-[320px] aspect-square"
       />
     </div>
   );
