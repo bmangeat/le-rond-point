@@ -17,6 +17,8 @@ export default async function MembersDirectoryPage({
   const now = new Date();
   const todayStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
   const todayEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+  // Horizon "bientôt là" : présence commençant dans les 14 prochains jours
+  const soonHorizon = new Date(todayEnd.getTime() + 14 * 24 * 60 * 60 * 1000);
 
   // Membres + présences en cours/à venir (pour les badges) — en parallèle
   const [members, presences] = await Promise.all([
@@ -31,7 +33,10 @@ export default async function MembersDirectoryPage({
     }),
   ]);
 
-  const aroundSoonIds = new Set(presences.map(p => p.userId));
+  // "bientôt là" = une présence qui démarre dans les 2 semaines (et pas encore en cours)
+  const aroundSoonIds = new Set(
+    presences.filter(p => p.startDate <= soonHorizon).map(p => p.userId)
+  );
   const hereNowIds = new Set(
     presences.filter(p => p.startDate <= todayEnd && p.endDate >= todayStart).map(p => p.userId)
   );
