@@ -13,6 +13,7 @@ export default async function ProfilePage() {
       id: true, name: true, email: true, image: true, city: true,
       notifEmail: true, notifPush: true, memberColor: true, role: true,
       notifPushOverlap: true, notifPushBirthday: true, notifPushPresence: true, notifPushPhotos: true, notifPushEvents: true,
+      isResident: true, notifPushAsResident: true,
       birthday: true, phone: true, instagram: true, snapchat: true, tiktok: true, linkedin: true,
     },
   });

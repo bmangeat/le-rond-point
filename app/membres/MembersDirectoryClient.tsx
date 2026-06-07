@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { BackButton } from "@/components/shared/BackButton";
-import { Search, MapPin, ChevronRight } from "lucide-react";
+import { Search, MapPin, ChevronRight, Home } from "lucide-react";
 
 interface DirectoryMember {
   id: string;
@@ -15,14 +15,23 @@ interface DirectoryMember {
   memberColor: number;
   aroundSoon: boolean; // a une présence à venir
   hereNow: boolean;    // présent au quartier aujourd'hui
+  isResident: boolean; // local (habite au quartier)
 }
 
-export function MembersDirectoryClient({ members }: { members: DirectoryMember[] }) {
+export function MembersDirectoryClient({
+  members,
+  initialResidentsOnly = false,
+}: {
+  members: DirectoryMember[];
+  initialResidentsOnly?: boolean;
+}) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"name" | "city">("name");
   const [hereOnly, setHereOnly] = useState(false);
+  const [residentsOnly, setResidentsOnly] = useState(initialResidentsOnly);
 
   const hereCount = useMemo(() => members.filter(m => m.hereNow).length, [members]);
+  const residentCount = useMemo(() => members.filter(m => m.isResident).length, [members]);
 
   const filtered = useMemo(() => {
     const q = query
@@ -35,6 +44,7 @@ export function MembersDirectoryClient({ members }: { members: DirectoryMember[]
       s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
     const list = members.filter(m => {
+      if (residentsOnly && !m.isResident) return false;
       if (hereOnly && !m.hereNow) return false;
       if (!q) return true;
       return norm(m.name).includes(q) || (m.city ? norm(m.city).includes(q) : false);
@@ -48,7 +58,7 @@ export function MembersDirectoryClient({ members }: { members: DirectoryMember[]
       }
       return a.name.localeCompare(b.name, "fr");
     });
-  }, [members, query, sort, hereOnly]);
+  }, [members, query, sort, hereOnly, residentsOnly]);
 
   return (
     <AppShell>
@@ -75,6 +85,16 @@ export function MembersDirectoryClient({ members }: { members: DirectoryMember[]
 
         {/* Filtre + tri */}
         <div className="flex flex-wrap gap-2">
+          {residentCount > 0 && (
+            <button
+              onClick={() => setResidentsOnly(v => !v)}
+              className={`px-3 py-1.5 rounded-full text-[13px] font-semibold transition-colors flex items-center gap-1.5 ${
+                residentsOnly ? "bg-available text-white" : "bg-available-light text-available"
+              }`}
+            >
+              <Home className="w-3.5 h-3.5" /> Locaux ({residentCount})
+            </button>
+          )}
           {hereCount > 0 && (
             <button
               onClick={() => setHereOnly(v => !v)}
@@ -116,6 +136,9 @@ export function MembersDirectoryClient({ members }: { members: DirectoryMember[]
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-body-strong font-semibold truncate">{m.name}</p>
+                    {m.isResident && (
+                      <Home className="w-3.5 h-3.5 text-available flex-shrink-0" aria-label="Local" />
+                    )}
                     {m.hereNow ? (
                       <span className="text-2xs font-semibold text-white bg-available px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-white" /> ici

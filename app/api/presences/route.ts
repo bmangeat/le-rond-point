@@ -60,6 +60,13 @@ export async function POST(req: Request) {
     const newPresencerName = session.user.name ?? "Quelqu'un";
     const dateLabel = formatDateRange(start, end);
 
+    // L'alerte "résident" ne se déclenche que si l'auteur est un expatrié.
+    const author = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { isResident: true },
+    });
+    const authorIsResident = author?.isResident ?? false;
+
     // Qui chevauche cette présence ? (la condition SQL = chevauchement de plages)
     const overlapping = await db.presence.findMany({
       where: {
@@ -78,30 +85,40 @@ export async function POST(req: Request) {
       select: {
         id: true, name: true, email: true,
         notifEmail: true, notifPush: true, notifPushOverlap: true, notifPushPresence: true,
+        isResident: true, notifPushAsResident: true,
       },
     });
 
     for (const u of others) {
       const overlaps = overlappingIds.has(u.id);
 
-      if (overlaps) {
-        if (u.notifEmail) {
-          await sendOverlapNotification({
-            to: u.email,
-            recipientName: u.name.split(" ")[0],
-            newPresencerName,
-            startDate: start,
-            endDate: end,
-          });
-        }
-        if (u.notifPush && u.notifPushOverlap) {
-          await sendPushToUser(u.id, {
-            title: `${newPresencerName} sera au quartier 🎉`,
-            body: `En même temps que toi : ${dateLabel}.`,
-            url: "/",
-            tag: `overlap-${session.user.id}`,
-          });
-        }
+      // Email de chevauchement (indépendant du push choisi ci-dessous)
+      if (overlaps && u.notifEmail) {
+        await sendOverlapNotification({
+          to: u.email,
+          recipientName: u.name.split(" ")[0],
+          newPresencerName,
+          startDate: start,
+          endDate: end,
+        });
+      }
+
+      // Un seul push par destinataire, par ordre de priorité :
+      // 1) alerte résident (un expat débarque), 2) chevauchement, 3) nouvelle présence
+      if (!authorIsResident && u.isResident && u.notifPush && u.notifPushAsResident) {
+        await sendPushToUser(u.id, {
+          title: `🏠 ${newPresencerName} débarque au quartier !`,
+          body: `${dateLabel}. Pense à te rendre dispo pour le capter 🍻`,
+          url: "/",
+          tag: `resident-${session.user.id}`,
+        });
+      } else if (overlaps && u.notifPush && u.notifPushOverlap) {
+        await sendPushToUser(u.id, {
+          title: `${newPresencerName} sera au quartier 🎉`,
+          body: `En même temps que toi : ${dateLabel}.`,
+          url: "/",
+          tag: `overlap-${session.user.id}`,
+        });
       } else if (u.notifPush && u.notifPushPresence) {
         await sendPushToUser(u.id, {
           title: `Nouvelle présence`,

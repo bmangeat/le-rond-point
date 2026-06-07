@@ -15,15 +15,17 @@ import { eventType, fmtEventWhen } from "@/lib/events";
 import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import type { Session } from "next-auth";
 
-interface PUser { id: string; name: string; image?: string | null; city?: string | null; memberColor: number }
+interface PUser { id: string; name: string; image?: string | null; city?: string | null; memberColor: number; isResident?: boolean }
 interface Presence { id: string; startDate: string; endDate: string; note?: string | null; availability: "OPEN" | "BUSY"; userId: string; user: PUser }
 interface EventLite { id: string; type: string; name: string; whenAt: string; placeName: string; rsvps: { userId: string; status: string }[] }
+interface Resident { id: string; name: string; image?: string | null; city?: string | null; memberColor: number }
 
 interface HomeClientProps {
   session: Session;
   presences: Presence[];
   myPresencesWithOverlaps: Array<Presence & { overlaps: Presence[] }>;
   events: EventLite[];
+  residents: Resident[];
   isPresentToday: boolean;
   isSingleDayToday: boolean;
 }
@@ -34,7 +36,7 @@ const JOURS = ["L", "M", "M", "J", "V", "S", "D"];
 const pad = (n: number) => String(n).padStart(2, "0");
 const dayKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-export function HomeClient({ session, presences, myPresencesWithOverlaps, events, isPresentToday, isSingleDayToday }: HomeClientProps) {
+export function HomeClient({ session, presences, myPresencesWithOverlaps, events, residents, isPresentToday, isSingleDayToday }: HomeClientProps) {
   const router = useRouter();
   const me = session.user.id;
   const today = new Date();
@@ -99,13 +101,36 @@ export function HomeClient({ session, presences, myPresencesWithOverlaps, events
           <MonthGrid year={cursor.y} month={cursor.m} presences={presences} events={events} me={me} onDayTap={setSelectedDate} />
         </div>
 
-        {/* 3. Qui est là en... */}
+        {/* 3. Qui est là en... (les résidents sont exclus de la timeline pour ne pas
+            la remplir de barres pleines — ils apparaissent dans le ResidentStrip) */}
         <section className="mb-6">
           <h2 className="text-[11px] font-semibold tracking-[0.07em] uppercase text-muted-foreground mb-3">Qui est là en {MONTHS[cursor.m].toLowerCase()}</h2>
           <div className="card p-3.5">
-            <Timeline year={cursor.y} month={cursor.m} presences={presences} me={me} onPresenceTap={(p) => p.userId === me ? openEditForm(p.id) : setSelectedDate(dayKey(new Date(p.startDate)))} />
+            <Timeline year={cursor.y} month={cursor.m} presences={presences.filter(p => !p.user.isResident)} me={me} onPresenceTap={(p) => p.userId === me ? openEditForm(p.id) : setSelectedDate(dayKey(new Date(p.startDate)))} />
           </div>
         </section>
+
+        {/* 3bis. Les locaux (résidents) */}
+        {residents.length > 0 && (
+          <section className="mb-6">
+            <Link href="/membres?filter=residents" className="card p-3.5 flex items-center gap-3 active:scale-[0.99] transition-transform">
+              <div className="flex -space-x-2 flex-shrink-0">
+                {residents.slice(0, 5).map(u => (
+                  <div key={u.id} className="ring-2 ring-surface rounded-full">
+                    <Avatar name={u.name} image={u.image} memberColor={u.memberColor} size="sm" />
+                  </div>
+                ))}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-bold tracking-tight flex items-center gap-1.5">🏠 Les locaux</p>
+                <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                  {residents.length} {residents.length > 1 ? "potes sont sur place" : "pote est sur place"} toute l&apos;année
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </Link>
+          </section>
+        )}
 
         {/* 4. Events */}
         {events.length > 0 && (

@@ -48,6 +48,23 @@ export async function POST(req: Request) {
     },
   });
 
+  // Les résidents sont invités d'office : RSVP PENDING (sauf l'hôte, déjà YES).
+  // Ils apparaissent dans "En attente" sans fausser le compteur des présents (YES).
+  try {
+    const residents = await db.user.findMany({
+      where: { isResident: true, isActive: true, id: { not: session.user.id } },
+      select: { id: true },
+    });
+    if (residents.length > 0) {
+      await db.eventRsvp.createMany({
+        data: residents.map(r => ({ eventId: event.id, userId: r.id, status: "PENDING" as const })),
+        skipDuplicates: true,
+      });
+    }
+  } catch (err) {
+    console.error("Erreur RSVP résidents:", err);
+  }
+
   // Notifier le groupe (push)
   try {
     const others = await db.user.findMany({

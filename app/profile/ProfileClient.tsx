@@ -7,7 +7,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { getMemberColor } from "@/lib/utils";
 import { isPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
-import { LogOut, BellRing, Bell, MapPin, User, Users, ChevronRight, ChevronDown, Shield, Camera, Loader2, Cake, Phone, Instagram, Linkedin, Music2, Ghost, Share2, Check } from "lucide-react";
+import { LogOut, BellRing, Bell, MapPin, User, Users, ChevronRight, ChevronDown, Shield, Camera, Loader2, Cake, Phone, Instagram, Linkedin, Music2, Ghost, Share2, Check, Home } from "lucide-react";
 
 interface ProfileUser {
   id: string;
@@ -22,6 +22,8 @@ interface ProfileUser {
   notifPushPresence: boolean;
   notifPushPhotos: boolean;
   notifPushEvents: boolean;
+  isResident: boolean;
+  notifPushAsResident: boolean;
   memberColor: number;
   role: "ADMIN" | "MEMBER";
   birthday?: string | Date | null;
@@ -46,6 +48,8 @@ interface Draft {
   notifPushPresence: boolean;
   notifPushPhotos: boolean;
   notifPushEvents: boolean;
+  isResident: boolean;
+  notifPushAsResident: boolean;
 }
 
 function toDateInput(d?: string | Date | null): string {
@@ -74,6 +78,8 @@ function makeDraft(u: ProfileUser): Draft {
     notifPushPresence: u.notifPushPresence,
     notifPushPhotos: u.notifPushPhotos,
     notifPushEvents: u.notifPushEvents,
+    isResident: u.isResident,
+    notifPushAsResident: u.notifPushAsResident,
   };
 }
 
@@ -269,6 +275,22 @@ export function ProfileClient({ user, memberCount, invitationCount, reportsCount
               <FieldLabel icon={<Phone className="w-[15px] h-[15px]" />} optional>Téléphone</FieldLabel>
               <input className={inputClass} type="tel" value={draft.phone} onChange={e => setField("phone", e.target.value)} placeholder="06 12 34 56 78" />
             </div>
+
+            {/* Statut résident */}
+            <div className="rounded-2xl border-[1.5px] border-border p-3.5">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-available-light flex items-center justify-center flex-shrink-0 text-available">
+                  <Home className="w-[18px] h-[18px]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-semibold leading-tight">Statut résident</p>
+                  <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">
+                    Tu habites au quartier ou à moins de 15 minutes&nbsp;? Active ce statut pour ne louper aucun passage de pote et être invité d&apos;office aux sorties.
+                  </p>
+                </div>
+                <Toggle on={draft.isResident} onChange={() => setField("isResident", !draft.isResident)} />
+              </div>
+            </div>
           </div>
         </Section>
 
@@ -323,6 +345,18 @@ export function ProfileClient({ user, memberCount, invitationCount, reportsCount
                 <Toggle on={notifPush && draft[n.key]} disabled={!notifPush} onChange={() => setField(n.key, !draft[n.key])} />
               </div>
             ))}
+            {/* Spécifique résident */}
+            {draft.isResident && (
+              <div className="flex items-center gap-3 py-2.5 px-0.5 border-t border-border">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14.5px] font-medium flex items-center gap-1.5">
+                    <Home className="w-3.5 h-3.5 text-available" /> Arrivée d&apos;un pote au quartier
+                  </p>
+                  <p className="text-[12.5px] text-muted-foreground">Quand un expatrié annonce un passage (réservé aux résidents)</p>
+                </div>
+                <Toggle on={notifPush && draft.notifPushAsResident} disabled={!notifPush} onChange={() => setField("notifPushAsResident", !draft.notifPushAsResident)} />
+              </div>
+            )}
           </div>
         </Section>
 

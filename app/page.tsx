@@ -16,7 +16,7 @@ export default async function HomePage() {
 
   // Les 3 requêtes sont indépendantes → en parallèle pour réduire la latence
   // cumulée (Neon serverless ajoute un aller-retour par requête séquentielle).
-  const [me, presences, events] = await Promise.all([
+  const [me, presences, events, residents] = await Promise.all([
     db.user.findUnique({
       where: { id: session.user.id },
       select: { onboardedAt: true },
@@ -28,7 +28,7 @@ export default async function HomePage() {
       },
       include: {
         user: {
-          select: { id: true, name: true, image: true, city: true, memberColor: true },
+          select: { id: true, name: true, image: true, city: true, memberColor: true, isResident: true },
         },
       },
       orderBy: { startDate: "asc" },
@@ -40,6 +40,12 @@ export default async function HomePage() {
         id: true, type: true, name: true, whenAt: true, placeName: true,
         rsvps: { select: { userId: true, status: true } },
       },
+    }),
+    // Les "locaux" pour le ResidentStrip (résidents actifs)
+    db.user.findMany({
+      where: { isResident: true, isActive: true },
+      select: { id: true, name: true, image: true, city: true, memberColor: true },
+      orderBy: { name: "asc" },
     }),
   ]);
 
@@ -71,6 +77,7 @@ export default async function HomePage() {
       presences={JSON.parse(JSON.stringify(presences))}
       myPresencesWithOverlaps={JSON.parse(JSON.stringify(myPresencesWithOverlaps))}
       events={JSON.parse(JSON.stringify(events))}
+      residents={JSON.parse(JSON.stringify(residents))}
       isPresentToday={isPresentToday}
       isSingleDayToday={isSingleDayToday}
     />

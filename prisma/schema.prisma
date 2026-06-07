@@ -31,6 +31,8 @@ model User {
   notifPushPresence Boolean @default(true)  // nouvelle présence ajoutée
   notifPushPhotos   Boolean @default(true)  // photos d'une sortie qui expirent
   notifPushEvents   Boolean @default(true)  // nouvelles sorties + rappel du jour J
+  isResident          Boolean @default(false) // habite au quartier / à -15 min
+  notifPushAsResident Boolean @default(true)  // alertes "un pote arrive" (résidents)
   memberColor   Int         @default(1) // 1-12, assigné auto à l'inscription
   role          Role        @default(MEMBER)
   isActive      Boolean     @default(true) // soft delete

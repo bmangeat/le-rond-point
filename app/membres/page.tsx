@@ -3,7 +3,11 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { MembersDirectoryClient } from "./MembersDirectoryClient";
 
-export default async function MembersDirectoryPage() {
+export default async function MembersDirectoryPage({
+  searchParams,
+}: {
+  searchParams: { filter?: string };
+}) {
   const session = await auth();
   if (!session) redirect("/login");
 
@@ -18,7 +22,7 @@ export default async function MembersDirectoryPage() {
   const [members, presences] = await Promise.all([
     db.user.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, image: true, city: true, memberColor: true },
+      select: { id: true, name: true, image: true, city: true, memberColor: true, isResident: true },
       orderBy: { name: "asc" },
     }),
     db.presence.findMany({
@@ -37,5 +41,10 @@ export default async function MembersDirectoryPage() {
     hereNow: hereNowIds.has(m.id),
   }));
 
-  return <MembersDirectoryClient members={directory} />;
+  return (
+    <MembersDirectoryClient
+      members={directory}
+      initialResidentsOnly={searchParams.filter === "residents"}
+    />
+  );
 }
