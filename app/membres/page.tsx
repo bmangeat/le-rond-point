@@ -9,9 +9,13 @@ export default async function MembersDirectoryPage() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  // Bornes du jour en UTC (présences stockées à minuit UTC)
+  const now = new Date();
+  const todayStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
+  const todayEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
 
-  // Membres + l'ensemble des userIds ayant une présence à venir (1 requête chacun, en //)
-  const [members, upcoming] = await Promise.all([
+  // Membres + présences en cours/à venir (pour les badges) — en parallèle
+  const [members, presences] = await Promise.all([
     db.user.findMany({
       where: { isActive: true },
       select: { id: true, name: true, image: true, city: true, memberColor: true },
@@ -19,13 +23,19 @@ export default async function MembersDirectoryPage() {
     }),
     db.presence.findMany({
       where: { endDate: { gte: today }, user: { isActive: true } },
-      select: { userId: true },
-      distinct: ["userId"],
+      select: { userId: true, startDate: true, endDate: true },
     }),
   ]);
 
-  const aroundSoonIds = new Set(upcoming.map(p => p.userId));
-  const directory = members.map(m => ({ ...m, aroundSoon: aroundSoonIds.has(m.id) }));
+  const aroundSoonIds = new Set(presences.map(p => p.userId));
+  const hereNowIds = new Set(
+    presences.filter(p => p.startDate <= todayEnd && p.endDate >= todayStart).map(p => p.userId)
+  );
+  const directory = members.map(m => ({
+    ...m,
+    aroundSoon: aroundSoonIds.has(m.id),
+    hereNow: hereNowIds.has(m.id),
+  }));
 
   return <MembersDirectoryClient members={directory} />;
 }

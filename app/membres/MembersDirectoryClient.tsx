@@ -14,11 +14,15 @@ interface DirectoryMember {
   city?: string | null;
   memberColor: number;
   aroundSoon: boolean; // a une présence à venir
+  hereNow: boolean;    // présent au quartier aujourd'hui
 }
 
 export function MembersDirectoryClient({ members }: { members: DirectoryMember[] }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"name" | "city">("name");
+  const [hereOnly, setHereOnly] = useState(false);
+
+  const hereCount = useMemo(() => members.filter(m => m.hereNow).length, [members]);
 
   const filtered = useMemo(() => {
     const q = query
@@ -31,6 +35,7 @@ export function MembersDirectoryClient({ members }: { members: DirectoryMember[]
       s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
     const list = members.filter(m => {
+      if (hereOnly && !m.hereNow) return false;
       if (!q) return true;
       return norm(m.name).includes(q) || (m.city ? norm(m.city).includes(q) : false);
     });
@@ -43,7 +48,7 @@ export function MembersDirectoryClient({ members }: { members: DirectoryMember[]
       }
       return a.name.localeCompare(b.name, "fr");
     });
-  }, [members, query, sort]);
+  }, [members, query, sort, hereOnly]);
 
   return (
     <AppShell>
@@ -68,8 +73,18 @@ export function MembersDirectoryClient({ members }: { members: DirectoryMember[]
           />
         </div>
 
-        {/* Tri */}
-        <div className="flex gap-2">
+        {/* Filtre + tri */}
+        <div className="flex flex-wrap gap-2">
+          {hereCount > 0 && (
+            <button
+              onClick={() => setHereOnly(v => !v)}
+              className={`px-3 py-1.5 rounded-full text-[13px] font-semibold transition-colors flex items-center gap-1.5 ${
+                hereOnly ? "bg-available text-white" : "bg-available-light text-available"
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-current" /> Au quartier ({hereCount})
+            </button>
+          )}
           {([
             { key: "name", label: "A → Z" },
             { key: "city", label: "Par ville" },
@@ -101,11 +116,15 @@ export function MembersDirectoryClient({ members }: { members: DirectoryMember[]
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-body-strong font-semibold truncate">{m.name}</p>
-                    {m.aroundSoon && (
+                    {m.hereNow ? (
+                      <span className="text-2xs font-semibold text-white bg-available px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white" /> ici
+                      </span>
+                    ) : m.aroundSoon ? (
                       <span className="text-2xs font-semibold text-available bg-available-light px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
                         bientôt là
                       </span>
-                    )}
+                    ) : null}
                   </div>
                   {m.city && (
                     <p className="text-caption flex items-center gap-1 truncate">
