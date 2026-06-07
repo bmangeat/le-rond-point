@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SWRegister } from "@/components/shared/SWRegister";
+import { BootLoader } from "@/components/shared/BootLoader";
 
 export const metadata: Metadata = {
   title: "Le Rond Point",
@@ -49,6 +50,7 @@ export default function RootLayout({
     <html lang="fr">
       <body className="min-h-screen bg-background">
         <SWRegister />
+        <BootLoader />
         {children}
       </body>
     </html>
