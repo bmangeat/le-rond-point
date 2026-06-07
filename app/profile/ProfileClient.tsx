@@ -7,7 +7,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { getMemberColor } from "@/lib/utils";
 import { isPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
-import { LogOut, BellRing, Bell, MapPin, User, ChevronRight, ChevronDown, Shield, Camera, Loader2, Cake, Phone, Instagram, Linkedin, Music2, Ghost, Share2, Check } from "lucide-react";
+import { LogOut, BellRing, Bell, MapPin, User, Users, ChevronRight, ChevronDown, Shield, Camera, Loader2, Cake, Phone, Instagram, Linkedin, Music2, Ghost, Share2, Check } from "lucide-react";
 
 interface ProfileUser {
   id: string;
@@ -325,6 +325,18 @@ export function ProfileClient({ user, memberCount, invitationCount, reportsCount
             ))}
           </div>
         </Section>
+
+        {/* Le quartier (annuaire des membres) */}
+        <a href="/membres" className="bg-surface rounded-2xl shadow-sm border border-border flex items-center gap-3 p-4">
+          <div className="w-[38px] h-[38px] rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0 text-primary">
+            <Users className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[16px] font-bold leading-tight">Le quartier</p>
+            <p className="text-[13.5px] text-muted-foreground mt-0.5">Parcourir les membres du groupe</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+        </a>
 
         {/* Administration */}
         {user.role === "ADMIN" && (
