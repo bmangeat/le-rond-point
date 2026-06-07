@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { AppShell } from "@/components/layout/AppShell";
@@ -361,7 +362,7 @@ export function ProfileClient({ user, memberCount, invitationCount, reportsCount
         </Section>
 
         {/* Le quartier (annuaire des membres) */}
-        <a href="/membres" className="bg-surface rounded-2xl shadow-sm border border-border flex items-center gap-3 p-4">
+        <Link href="/membres" className="bg-surface rounded-2xl shadow-sm border border-border flex items-center gap-3 p-4">
           <div className="w-[38px] h-[38px] rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0 text-primary">
             <Users className="w-5 h-5" />
           </div>
@@ -370,11 +371,11 @@ export function ProfileClient({ user, memberCount, invitationCount, reportsCount
             <p className="text-[13.5px] text-muted-foreground mt-0.5">Parcourir les membres du groupe</p>
           </div>
           <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-        </a>
+        </Link>
 
         {/* Administration */}
         {user.role === "ADMIN" && (
-          <a href="/admin" className="bg-surface rounded-2xl shadow-sm border border-border flex items-center gap-3 p-4">
+          <Link href="/admin" className="bg-surface rounded-2xl shadow-sm border border-border flex items-center gap-3 p-4">
             <div className="relative w-[38px] h-[38px] rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0 text-primary">
               <Shield className="w-5 h-5" />
               {reportsCount > 0 && (
@@ -392,7 +393,7 @@ export function ProfileClient({ user, memberCount, invitationCount, reportsCount
               </p>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-          </a>
+          </Link>
         )}
 
         {/* Déconnexion */}

@@ -11,7 +11,7 @@ export function FullPageLoader() {
         src="/logo-animated.svg"
         alt="Chargement…"
         aria-hidden="true"
-        className="w-[55vw] max-w-[320px] aspect-square"
+        className="w-[55vw] max-w-[320px] aspect-square -translate-y-[1.2vh]"
       />
     </div>
   );
