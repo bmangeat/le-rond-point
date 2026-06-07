@@ -1,0 +1,15 @@
+<svg width="96" height="96" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Anneau du rond-point -->
+  <circle cx="50" cy="50" r="29" fill="none" stroke="white" stroke-width="8"></circle>
+  <!-- 8 membres autour -->
+  <circle cx="50" cy="21" r="7" fill="white"></circle>
+  <circle cx="70.5" cy="29.5" r="7" fill="white"></circle>
+  <circle cx="79" cy="50" r="7" fill="white"></circle>
+  <circle cx="70.5" cy="70.5" r="7" fill="white"></circle>
+  <circle cx="50" cy="79" r="7" fill="white"></circle>
+  <circle cx="29.5" cy="70.5" r="7" fill="white"></circle>
+  <circle cx="21" cy="50" r="7" fill="white"></circle>
+  <circle cx="29.5" cy="29.5" r="7" fill="white"></circle>
+  <!-- Centre -->
+  <circle cx="50" cy="50" r="11" fill="white"></circle>
+</svg>
