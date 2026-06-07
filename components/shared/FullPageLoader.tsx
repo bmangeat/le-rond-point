@@ -1,19 +1,18 @@
 /**
  * Loader plein écran affiché pendant le chargement initial de l'app.
- * Utilise le logo animé SVG centré sur le fond de l'app.
+ * Calé exactement sur les splash screens iOS (même logo SVG, même fond,
+ * logo centré couvrant ~55% de la largeur) pour une transition sans rupture.
  */
 export function FullPageLoader() {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background gap-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/logo-animated.svg"
+        src="/logo.svg"
         alt="Chargement…"
-        className="w-24 h-24"
         aria-hidden="true"
+        className="w-[55vw] max-w-[320px] aspect-square animate-pulse"
       />
-      <p className="text-sm text-muted-foreground font-medium tracking-wide">
-        Le Rond Point
-      </p>
     </div>
   );
 }

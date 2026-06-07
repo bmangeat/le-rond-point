@@ -7,9 +7,10 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SRC = join(root, "public/icons/icon-512.png");
+const SRC = join(root, "public/logo.svg"); // SVG vectoriel → rastérisation nette
 const OUT = join(root, "public/splash");
 const BG = { r: 248, g: 250, b: 255, alpha: 1 }; // #F8FAFF
+const LOGO_FRACTION = 0.55; // le logo couvre 55% de la largeur (aspect 1)
 
 // [largeur CSS, hauteur CSS, device-pixel-ratio] en portrait
 const DEVICES = [
@@ -23,8 +24,9 @@ await mkdir(OUT, { recursive: true });
 const tags = [];
 for (const [cw, ch, dpr] of DEVICES) {
   const w = cw * dpr, h = ch * dpr;
-  const logo = Math.round(Math.min(w, h) * 0.32); // logo = 32% du petit côté
-  const resized = await sharp(SRC).resize(logo, logo, { fit: "contain" }).toBuffer();
+  const logo = Math.round(w * LOGO_FRACTION); // 55% de la largeur, centré
+  // Rastérisation du SVG directement à la taille cible → net (pas d'upscale).
+  const resized = await sharp(SRC, { density: 384 }).resize(logo, logo, { fit: "contain" }).png().toBuffer();
   const file = `apple-splash-${w}x${h}.png`;
   await sharp({ create: { width: w, height: h, channels: 4, background: BG } })
     .composite([{ input: resized, gravity: "centre" }])
