@@ -70,8 +70,9 @@ model Event {
   whenAt          DateTime
   placeName       String
   placeAddr       String?
-  logisticsKind   String     // "list" | "tricount"
-  tricountEnabled Boolean    @default(true)
+  logisticsKind   String     // legacy — la logistique est désormais portée par les 2 booléens
+  needsEnabled    Boolean    @default(false) // liste de choses à apporter
+  tricountEnabled Boolean    @default(true)  // suivi des dépenses (Tricount)
   hasPlaylist     Boolean    @default(false)
   playlistUrl     String?
   cancelledAt     DateTime?  // null = sortie active ; sinon date d'annulation

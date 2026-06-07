@@ -14,7 +14,7 @@ interface Member { id: string; name: string; image?: string | null; memberColor:
 interface EventData {
   id: string; type: string; name: string; description?: string | null; whenAt: string;
   placeName: string; placeAddr?: string | null; hostId: string;
-  logisticsKind: string; tricountEnabled: boolean; hasPlaylist: boolean; playlistUrl?: string | null;
+  logisticsKind: string; needsEnabled: boolean; tricountEnabled: boolean; hasPlaylist: boolean; playlistUrl?: string | null;
   cancelledAt?: string | null; cancelReason?: string | null;
   rsvps: { userId: string; status: string }[];
   needs: { id: string; label: string; claimedById: string | null }[];
@@ -32,6 +32,10 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
   const me = currentUserId;
   const when = fmtEventWhen(new Date(event.whenAt));
   const cancelled = !!event.cancelledAt;
+  const hasNeeds = event.needsEnabled;
+  const hasTricount = event.tricountEnabled;
+  const hasLogistics = hasNeeds || hasTricount;
+  const logisticsLabel = hasNeeds && hasTricount ? "Logistique" : hasTricount ? "Dépenses" : "Besoins";
   const memberMap = useMemo(() => new Map(members.map(m => [m.id, m])), [members]);
   const host = memberMap.get(event.hostId);
 
@@ -179,7 +183,7 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
         <div className="flex gap-1 p-1 bg-surface-raised rounded-2xl">
           {([
             { key: "people", label: "Qui vient" },
-            { key: "logistics", label: ty.logistics === "tricount" ? "Dépenses" : "Besoins" },
+            ...(hasLogistics ? [{ key: "logistics" as const, label: logisticsLabel }] : []),
             { key: "life", label: "Le fil" },
           ] as const).map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
@@ -197,9 +201,10 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
             members={members} memberMap={memberMap} busy={busy} action={action} />
         )}
         {tab === "logistics" && (
-          ty.logistics === "tricount"
-            ? <TricountPanel event={ev} accent={accent} me={me} memberMap={memberMap} statusOf={statusOf} busy={busy} action={action} />
-            : <NeedsPanel event={ev} accent={accent} me={me} memberMap={memberMap} busy={busy} action={action} />
+          <div className="flex flex-col gap-6">
+            {hasNeeds && <NeedsPanel event={ev} accent={accent} me={me} memberMap={memberMap} busy={busy} action={action} />}
+            {hasTricount && <TricountPanel event={ev} accent={accent} me={me} memberMap={memberMap} statusOf={statusOf} busy={busy} action={action} />}
+          </div>
         )}
         {tab === "life" && <LifeTab event={ev} accent={accent} me={me} memberMap={memberMap} busy={busy} action={action} isAdmin={isAdmin} />}
       </div>

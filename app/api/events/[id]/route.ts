@@ -18,7 +18,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!allowed) return NextResponse.json({ error: "Réservé à l'organisateur ou à un admin" }, { status: 403 });
 
   const body = await req.json();
-  const { type, name, description, when, placeName, placeAddr, tricountEnabled, hasPlaylist, playlistUrl } = body;
+  const { type, name, description, when, placeName, placeAddr, needsEnabled, tricountEnabled, hasPlaylist, playlistUrl } = body;
 
   if (type && !EVENT_TYPES[type as EventTypeKey]) return NextResponse.json({ error: "Type invalide" }, { status: 400 });
   if (name !== undefined && !name?.trim()) return NextResponse.json({ error: "Nom obligatoire" }, { status: 400 });
@@ -33,6 +33,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...(when && { whenAt: new Date(when) }),
       ...(placeName !== undefined && { placeName: placeName.trim() }),
       ...(placeAddr !== undefined && { placeAddr: placeAddr?.trim() || null }),
+      ...(typeof needsEnabled === "boolean" && { needsEnabled }),
       ...(typeof tricountEnabled === "boolean" && { tricountEnabled }),
       ...(hasPlaylist !== undefined && { hasPlaylist: !!hasPlaylist }),
       ...(playlistUrl !== undefined && { playlistUrl: playlistUrl?.trim() || null }),

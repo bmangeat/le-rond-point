@@ -33,6 +33,7 @@ export function CreateEventClient() {
   const [place, setPlace] = useState<Place | null>(null);
   const [needs, setNeeds] = useState<string[]>([]);
   const [needInput, setNeedInput] = useState("");
+  const [needsEnabled, setNeedsEnabled] = useState(false);
   const [tricount, setTricount] = useState(true);
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +41,15 @@ export function CreateEventClient() {
 
   const meta = type ? EVENT_TYPES[type] : null;
   const accent = meta?.color ?? "#3B7BF8";
-  const logKind = meta?.logistics ?? null;
+  const canNeeds = type === "SOIREE" || type === "SORTIE";
+
+  // Sélection d'un type → défauts de logistique cohérents (modifiables ensuite)
+  function selectType(k: EventTypeKey) {
+    setType(k);
+    const soiree = k === "SOIREE" || k === "SORTIE";
+    setNeedsEnabled(soiree);   // soirée/sortie : liste activée par défaut
+    setTricount(!soiree);      // bar/resto : tricount activé par défaut
+  }
 
   const today = new Date();
   const sat = (() => { const d = new Date(today); d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7)); return d; })();
@@ -79,7 +88,8 @@ export function CreateEventClient() {
           when: new Date(when).toISOString(),
           placeName: place.name,
           placeAddr: place.addr,
-          needs: logKind === "list" ? needs : [],
+          needs: canNeeds && needsEnabled ? needs : [],
+          needsEnabled: canNeeds && needsEnabled,
           tricountEnabled: tricount,
           hasPlaylist: (type === "SOIREE" || type === "SORTIE") && !!playlistUrl.trim(),
           playlistUrl: playlistUrl.trim() || null,
@@ -118,7 +128,7 @@ export function CreateEventClient() {
             return (
               <button
                 key={k}
-                onClick={() => setType(k)}
+                onClick={() => selectType(k)}
                 className="flex-shrink-0 w-[92px] py-3.5 px-2 rounded-[18px] border-2 flex flex-col items-center gap-1.5 transition-all"
                 style={{
                   borderColor: on ? t.color : "#E2E8F0",
@@ -208,41 +218,58 @@ export function CreateEventClient() {
           </div>
         )}
 
-        {/* Logistique dynamique */}
-        {logKind === "list" && (
+        {/* Logistique : liste à apporter et/ou tricount (combinables pour soirée/sortie) */}
+        {type && (
           <div>
-            <h2 className="text-[17px] font-bold mt-6 mb-1">Liste des besoins</h2>
-            <p className="text-caption mb-3">Qui apporte quoi ? Chacun pourra se positionner ensuite.</p>
-            <div className="flex flex-col gap-2">
-              {needs.map((n, i) => (
-                <div key={i} className="flex items-center gap-2.5 rounded-xl border border-border bg-surface px-3 py-2.5">
-                  <span className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ background: accent }} />
-                  <span className="flex-1 text-[14.5px] font-medium">{n}</span>
-                  <button onClick={() => setNeeds(arr => arr.filter((_, j) => j !== i))} className="text-muted-foreground flex-shrink-0"><X className="w-4 h-4" /></button>
-                </div>
-              ))}
-            </div>
-            <div className={`flex gap-2 ${needs.length ? "mt-2.5" : ""}`}>
-              <input className={`${inputCls} flex-1`} value={needInput} onChange={e => setNeedInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addNeed(needInput)} placeholder="Ajouter un élément…" />
-              <button onClick={() => addNeed(needInput)} className="w-[50px] rounded-2xl text-white flex items-center justify-center flex-shrink-0" style={{ background: accent }}><Plus className="w-5 h-5" /></button>
-            </div>
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {NEEDS_SUGGESTIONS.filter(s => !needs.some(n => n.toLowerCase() === s.toLowerCase())).map(s => (
-                <button key={s} onClick={() => addNeed(s)} className="px-3 py-1.5 rounded-full border border-dashed border-border bg-surface text-[12.5px] font-medium text-muted-foreground">+ {s}</button>
-              ))}
-            </div>
-          </div>
-        )}
-        {logKind === "tricount" && (
-          <div>
-            <h2 className="text-[17px] font-bold mt-6 mb-3">Dépenses</h2>
-            <button onClick={() => setTricount(v => !v)} className="flex items-center gap-3 w-full text-left rounded-2xl border-[1.5px] px-3.5 py-3.5 bg-surface" style={{ borderColor: tricount ? accent : "#E2E8F0" }}>
+            <h2 className="text-[17px] font-bold mt-6 mb-3">Logistique</h2>
+
+            {/* Liste de choses à apporter (soirée / sortie uniquement) */}
+            {canNeeds && (
+              <>
+                <button onClick={() => setNeedsEnabled(v => !v)} className="flex items-center gap-3 w-full text-left rounded-2xl border-[1.5px] px-3.5 py-3.5 bg-surface" style={{ borderColor: needsEnabled ? accent : "#E2E8F0" }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: `${accent}1f` }}>🎒</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-semibold">Liste de choses à apporter</p>
+                    <p className="text-caption">Qui ramène quoi — chacun se positionne</p>
+                  </div>
+                  <span className="relative w-[50px] h-[30px] rounded-full flex-shrink-0 transition-colors" style={{ background: needsEnabled ? accent : "#E2E8F0" }}>
+                    <span className={`absolute top-[3px] w-6 h-6 rounded-full bg-white shadow transition-all ${needsEnabled ? "left-[23px]" : "left-[3px]"}`} />
+                  </span>
+                </button>
+
+                {needsEnabled && (
+                  <div className="mt-3">
+                    <div className="flex flex-col gap-2">
+                      {needs.map((n, i) => (
+                        <div key={i} className="flex items-center gap-2.5 rounded-xl border border-border bg-surface px-3 py-2.5">
+                          <span className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ background: accent }} />
+                          <span className="flex-1 text-[14.5px] font-medium">{n}</span>
+                          <button onClick={() => setNeeds(arr => arr.filter((_, j) => j !== i))} className="text-muted-foreground flex-shrink-0"><X className="w-4 h-4" /></button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className={`flex gap-2 ${needs.length ? "mt-2.5" : ""}`}>
+                      <input className={`${inputCls} flex-1`} value={needInput} onChange={e => setNeedInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addNeed(needInput)} placeholder="Ajouter un élément…" />
+                      <button onClick={() => addNeed(needInput)} className="w-[50px] rounded-2xl text-white flex items-center justify-center flex-shrink-0" style={{ background: accent }}><Plus className="w-5 h-5" /></button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {NEEDS_SUGGESTIONS.filter(s => !needs.some(n => n.toLowerCase() === s.toLowerCase())).map(s => (
+                        <button key={s} onClick={() => addNeed(s)} className="px-3 py-1.5 rounded-full border border-dashed border-border bg-surface text-[12.5px] font-medium text-muted-foreground">+ {s}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Tricount (tous les types) */}
+            <button onClick={() => setTricount(v => !v)} className={`flex items-center gap-3 w-full text-left rounded-2xl border-[1.5px] px-3.5 py-3.5 bg-surface ${canNeeds ? "mt-2.5" : ""}`} style={{ borderColor: tricount ? accent : "#E2E8F0" }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: `${accent}1f` }}>💸</div>
               <div className="flex-1 min-w-0">
                 <p className="text-[15px] font-semibold">Suivi des dépenses</p>
                 <p className="text-caption">Façon Tricount — qui doit combien à qui</p>
               </div>
-              <span className={`relative w-[50px] h-[30px] rounded-full flex-shrink-0 transition-colors`} style={{ background: tricount ? accent : "#E2E8F0" }}>
+              <span className="relative w-[50px] h-[30px] rounded-full flex-shrink-0 transition-colors" style={{ background: tricount ? accent : "#E2E8F0" }}>
                 <span className={`absolute top-[3px] w-6 h-6 rounded-full bg-white shadow transition-all ${tricount ? "left-[23px]" : "left-[3px]"}`} />
               </span>
             </button>

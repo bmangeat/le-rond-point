@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { type, name, description, when, placeName, placeAddr, needs, tricountEnabled, hasPlaylist, playlistUrl } = body;
+  const { type, name, description, when, placeName, placeAddr, needs, needsEnabled, tricountEnabled, hasPlaylist, playlistUrl } = body;
 
   if (!EVENT_TYPES[type as EventTypeKey]) return NextResponse.json({ error: "Type invalide" }, { status: 400 });
   if (!name?.trim()) return NextResponse.json({ error: "Nom obligatoire" }, { status: 400 });
@@ -25,6 +25,12 @@ export async function POST(req: Request) {
 
   const meta = eventType(type);
   const whenAt = new Date(when);
+
+  // Capacités par type : la liste de besoins n'est proposée que pour soirée/sortie ;
+  // le tricount est possible partout. Les deux sont indépendants et combinables.
+  const canNeeds = type === "SOIREE" || type === "SORTIE";
+  const needsOn = canNeeds && needsEnabled === true;
+  const tricountOn = typeof tricountEnabled === "boolean" ? tricountEnabled : !canNeeds;
 
   const event = await db.event.create({
     data: {
@@ -36,13 +42,14 @@ export async function POST(req: Request) {
       placeName: placeName.trim(),
       placeAddr: placeAddr?.trim() || null,
       logisticsKind: meta.logistics,
-      tricountEnabled: meta.logistics === "tricount" ? tricountEnabled !== false : false,
+      needsEnabled: needsOn,
+      tricountEnabled: tricountOn,
       hasPlaylist: !!hasPlaylist,
       playlistUrl: playlistUrl?.trim() || null,
       // L'hôte est présent d'office
       rsvps: { create: { userId: session.user.id, status: "YES" } },
       needs:
-        meta.logistics === "list" && Array.isArray(needs)
+        needsOn && Array.isArray(needs)
           ? { create: needs.filter((l: string) => l?.trim()).map((label: string) => ({ label: label.trim() })) }
           : undefined,
     },

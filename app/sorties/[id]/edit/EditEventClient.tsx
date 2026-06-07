@@ -16,7 +16,7 @@ const PLACE_SUGGESTIONS = [
 interface Place { name: string; addr: string | null }
 interface EventData {
   id: string; type: string; name: string; description?: string | null; whenAt: string;
-  placeName: string; placeAddr?: string | null; tricountEnabled: boolean; playlistUrl?: string | null;
+  placeName: string; placeAddr?: string | null; needsEnabled?: boolean; tricountEnabled: boolean; playlistUrl?: string | null;
   cancelledAt?: string | null; cancelReason?: string | null;
 }
 
@@ -34,6 +34,7 @@ export function EditEventClient({ event, isAdmin = false }: { event: EventData; 
   const [when, setWhen] = useState(toLocalInput(event.whenAt));
   const [query, setQuery] = useState("");
   const [place, setPlace] = useState<Place | null>({ name: event.placeName, addr: event.placeAddr ?? null });
+  const [needsEnabled, setNeedsEnabled] = useState(!!event.needsEnabled);
   const [tricount, setTricount] = useState(event.tricountEnabled);
   const [playlistUrl, setPlaylistUrl] = useState(event.playlistUrl ?? "");
   const [saving, setSaving] = useState(false);
@@ -102,7 +103,13 @@ export function EditEventClient({ event, isAdmin = false }: { event: EventData; 
 
   const meta = EVENT_TYPES[type];
   const accent = meta.color;
-  const logKind = meta.logistics;
+  const canNeeds = type === "SOIREE" || type === "SORTIE";
+
+  function selectType(k: EventTypeKey) {
+    setType(k);
+    const soiree = k === "SOIREE" || k === "SORTIE";
+    if (!soiree) setNeedsEnabled(false); // bar/resto : pas de liste
+  }
 
   const placeResults = query.trim().length > 1
     ? PLACE_SUGGESTIONS.filter(p => (p.name + " " + p.addr).toLowerCase().includes(query.toLowerCase())).slice(0, 4)
@@ -122,7 +129,8 @@ export function EditEventClient({ event, isAdmin = false }: { event: EventData; 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type, name, description: desc, when: new Date(when).toISOString(),
-          placeName: place.name, placeAddr: place.addr, tricountEnabled: tricount,
+          placeName: place.name, placeAddr: place.addr,
+          needsEnabled: canNeeds && needsEnabled, tricountEnabled: tricount,
           hasPlaylist: (type === "SOIREE" || type === "SORTIE") && !!playlistUrl.trim(),
           playlistUrl: playlistUrl.trim() || null,
         }),
@@ -152,7 +160,7 @@ export function EditEventClient({ event, isAdmin = false }: { event: EventData; 
           {EVENT_TYPE_ORDER.map(k => {
             const t = EVENT_TYPES[k]; const on = type === k;
             return (
-              <button key={k} onClick={() => setType(k)} className="flex-shrink-0 w-[92px] py-3.5 px-2 rounded-[18px] border-2 flex flex-col items-center gap-1.5 transition-all"
+              <button key={k} onClick={() => selectType(k)} className="flex-shrink-0 w-[92px] py-3.5 px-2 rounded-[18px] border-2 flex flex-col items-center gap-1.5 transition-all"
                 style={{ borderColor: on ? t.color : "#E2E8F0", background: on ? t.tint : "#FFFFFF", transform: on ? "translateY(-2px)" : "none" }}>
                 <span className="text-[30px] leading-none">{t.emoji}</span>
                 <span className="text-[12.5px] font-semibold text-center leading-tight" style={{ color: on ? t.color : "#64748B" }}>{t.short}</span>
@@ -201,18 +209,28 @@ export function EditEventClient({ event, isAdmin = false }: { event: EventData; 
           </div>
         )}
 
-        {logKind === "tricount" && (
-          <div>
-            <h2 className="text-[17px] font-bold mt-6 mb-3">Dépenses</h2>
-            <button onClick={() => setTricount(v => !v)} className="flex items-center gap-3 w-full text-left rounded-2xl border-[1.5px] px-3.5 py-3.5 bg-surface" style={{ borderColor: tricount ? accent : "#E2E8F0" }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: `${accent}1f` }}>💸</div>
-              <div className="flex-1 min-w-0"><p className="text-[15px] font-semibold">Suivi des dépenses</p><p className="text-caption">Façon Tricount</p></div>
-              <span className="relative w-[50px] h-[30px] rounded-full flex-shrink-0 transition-colors" style={{ background: tricount ? accent : "#E2E8F0" }}>
-                <span className={`absolute top-[3px] w-6 h-6 rounded-full bg-white shadow transition-all ${tricount ? "left-[23px]" : "left-[3px]"}`} />
+        {/* Logistique : liste à apporter et/ou tricount (combinables pour soirée/sortie) */}
+        <div>
+          <h2 className="text-[17px] font-bold mt-6 mb-3">Logistique</h2>
+
+          {canNeeds && (
+            <button onClick={() => setNeedsEnabled(v => !v)} className="flex items-center gap-3 w-full text-left rounded-2xl border-[1.5px] px-3.5 py-3.5 bg-surface mb-2.5" style={{ borderColor: needsEnabled ? accent : "#E2E8F0" }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: `${accent}1f` }}>🎒</div>
+              <div className="flex-1 min-w-0"><p className="text-[15px] font-semibold">Liste de choses à apporter</p><p className="text-caption">Gère les éléments dans la sortie</p></div>
+              <span className="relative w-[50px] h-[30px] rounded-full flex-shrink-0 transition-colors" style={{ background: needsEnabled ? accent : "#E2E8F0" }}>
+                <span className={`absolute top-[3px] w-6 h-6 rounded-full bg-white shadow transition-all ${needsEnabled ? "left-[23px]" : "left-[3px]"}`} />
               </span>
             </button>
-          </div>
-        )}
+          )}
+
+          <button onClick={() => setTricount(v => !v)} className="flex items-center gap-3 w-full text-left rounded-2xl border-[1.5px] px-3.5 py-3.5 bg-surface" style={{ borderColor: tricount ? accent : "#E2E8F0" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: `${accent}1f` }}>💸</div>
+            <div className="flex-1 min-w-0"><p className="text-[15px] font-semibold">Suivi des dépenses</p><p className="text-caption">Façon Tricount</p></div>
+            <span className="relative w-[50px] h-[30px] rounded-full flex-shrink-0 transition-colors" style={{ background: tricount ? accent : "#E2E8F0" }}>
+              <span className={`absolute top-[3px] w-6 h-6 rounded-full bg-white shadow transition-all ${tricount ? "left-[23px]" : "left-[3px]"}`} />
+            </span>
+          </button>
+        </div>
 
         {(type === "SOIREE" || type === "SORTIE") && (
           <div>
