@@ -97,13 +97,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user?.id) {
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
-          select: { role: true, memberColor: true, city: true, notifEmail: true },
+          select: { role: true, memberColor: true, city: true, notifEmail: true, groupId: true },
         });
         if (dbUser) {
           token.role = dbUser.role;
           token.memberColor = dbUser.memberColor;
           token.city = dbUser.city ?? undefined;
           token.notifEmail = dbUser.notifEmail;
+          token.groupId = dbUser.groupId ?? null;
         }
       }
       return token;
@@ -117,13 +118,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = user.id;
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
-          select: { role: true, memberColor: true, city: true, notifEmail: true },
+          select: { role: true, memberColor: true, city: true, notifEmail: true, groupId: true },
         });
         if (dbUser) {
           session.user.role = dbUser.role;
           session.user.memberColor = dbUser.memberColor;
           session.user.city = dbUser.city ?? undefined;
           session.user.notifEmail = dbUser.notifEmail;
+          session.user.groupId = dbUser.groupId ?? null;
         }
         return session;
       }
@@ -135,6 +137,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.memberColor = token.memberColor as number;
         session.user.city = token.city as string | undefined;
         session.user.notifEmail = token.notifEmail as boolean;
+        session.user.groupId = (token.groupId as string | null) ?? null;
       }
       return session;
     },
@@ -143,9 +146,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async createUser({ user }) {
       if (!user.email || !user.id) return;
 
-      // Attribuer une couleur membre auto (prochaine disponible parmi 1-12)
+      // Invitation (nominative par email, ou lien générique via cookie) → porte le groupId cible
+      const invitation =
+        (await db.invitation.findFirst({
+          where: { email: user.email, usedAt: null, expiresAt: { gt: new Date() } },
+        })) ?? (await findLinkInvitation());
+      const groupId = invitation?.groupId ?? null;
+
+      // Couleur membre auto (prochaine dispo 1-12), unique AU SEIN DU GROUPE
       const usedColors = await db.user.findMany({
-        where: { isActive: true },
+        where: { isActive: true, ...(groupId ? { groupId } : {}) },
         select: { memberColor: true },
       });
       const used = new Set(usedColors.map((u) => u.memberColor));
@@ -154,16 +164,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!used.has(i)) { color = i; break; }
       }
 
+      // Assigne couleur + rattachement au groupe issu de l'invitation
       await db.user.update({
         where: { id: user.id },
-        data: { memberColor: color },
+        data: { memberColor: color, ...(groupId ? { groupId } : {}) },
       });
-
-      // Lier l'invitation (nominative par email, ou lien générique via cookie)
-      const invitation =
-        (await db.invitation.findFirst({
-          where: { email: user.email, usedAt: null, expiresAt: { gt: new Date() } },
-        })) ?? (await findLinkInvitation());
 
       if (invitation) {
         await db.invitation.update({
@@ -187,6 +192,7 @@ declare module "next-auth" {
       memberColor: number;
       city?: string;
       notifEmail: boolean;
+      groupId?: string | null;
     };
   }
 }
