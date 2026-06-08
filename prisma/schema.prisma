@@ -14,74 +14,89 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model User {
-  id            String      @id @default(cuid())
-  email         String      @unique
-  name          String
-  image         String?
-  emailVerified DateTime?
-  city          String?
-  birthday      DateTime?
-  phone         String?
-  instagram     String?
-  snapchat      String?
-  tiktok        String?
-  linkedin      String?
-  notifEmail    Boolean     @default(true)
-  notifPush     Boolean     @default(false)
-  notifPushOverlap  Boolean @default(true)  // chevauchement de présences
-  notifPushBirthday Boolean @default(true)  // anniversaires
-  notifPushPresence Boolean @default(true)  // nouvelle présence ajoutée
-  notifPushPhotos   Boolean @default(true)  // photos d'une sortie qui expirent
-  notifPushEvents   Boolean @default(true)  // nouvelles sorties + rappel du jour J
-  isResident          Boolean @default(false) // habite au quartier / à -15 min
-  notifPushAsResident Boolean @default(true)  // alertes "un pote arrive" (résidents)
-  memberColor   Int         @default(1) // 1-12, assigné auto à l'inscription
-  role          Role        @default(MEMBER)
-  isActive      Boolean     @default(true) // soft delete
-  onboardedAt   DateTime?   // null = onboarding pas encore complété (1ère connexion)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+// Multi-tenant : un « Rond Point » = un groupe étanche. Toutes les données sont
+// cloisonnées par groupId (directement ou via la relation user/event).
+model Group {
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  users       User[]
+  events      Event[]
+  invitations Invitation[]
+}
 
-  presences     Presence[]
-  invitedBy     Invitation? @relation("InvitedUser")
+model User {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  name                String
+  image               String?
+  emailVerified       DateTime?
+  city                String?
+  birthday            DateTime?
+  phone               String?
+  instagram           String?
+  snapchat            String?
+  tiktok              String?
+  linkedin            String?
+  notifEmail          Boolean   @default(true)
+  notifPush           Boolean   @default(false)
+  notifPushOverlap    Boolean   @default(true) // chevauchement de présences
+  notifPushBirthday   Boolean   @default(true) // anniversaires
+  notifPushPresence   Boolean   @default(true) // nouvelle présence ajoutée
+  notifPushPhotos     Boolean   @default(true) // photos d'une sortie qui expirent
+  notifPushEvents     Boolean   @default(true) // nouvelles sorties + rappel du jour J
+  isResident          Boolean   @default(false) // habite au quartier / à -15 min
+  notifPushAsResident Boolean   @default(true) // alertes "un pote arrive" (résidents)
+  memberColor         Int       @default(1) // 1-12, assigné auto à l'inscription
+  role                Role      @default(MEMBER)
+  groupId             String? // tenant — optionnel en QA pour migrer l'existant ; null = compte orphelin
+  group               Group?    @relation(fields: [groupId], references: [id])
+  isActive            Boolean   @default(true) // soft delete
+  onboardedAt         DateTime? // null = onboarding pas encore complété (1ère connexion)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  presences         Presence[]
+  invitedBy         Invitation?        @relation("InvitedUser")
   pushSubscriptions PushSubscription[]
 
   // Sorties / événements
-  eventsHosted  Event[]        @relation("EventHost")
-  eventRsvps    EventRsvp[]
-  eventNeeds    EventNeed[]    @relation("NeedClaim")
-  eventExpenses EventExpense[] @relation("ExpensePayer")
-  eventComments EventComment[]
-  eventPhotos   EventPhoto[]   @relation("PhotoUploader")
+  eventsHosted   Event[]         @relation("EventHost")
+  eventRsvps     EventRsvp[]
+  eventNeeds     EventNeed[]     @relation("NeedClaim")
+  eventExpenses  EventExpense[]  @relation("ExpensePayer")
+  eventComments  EventComment[]
+  eventPhotos    EventPhoto[]    @relation("PhotoUploader")
   commentReports CommentReport[]
 
   // NextAuth adapter fields
-  accounts      Account[]
-  sessions      Session[]
+  accounts Account[]
+  sessions Session[]
 }
 
 // ─── Sorties / événements ─────────────────────────────────────────────────────
 
 model Event {
-  id              String     @id @default(cuid())
+  id              String    @id @default(cuid())
   type            EventType
   name            String
   hostId          String
-  host            User       @relation("EventHost", fields: [hostId], references: [id], onDelete: Cascade)
-  description     String?    @db.VarChar(500)
+  host            User      @relation("EventHost", fields: [hostId], references: [id], onDelete: Cascade)
+  description     String?   @db.VarChar(500)
   whenAt          DateTime
   placeName       String
   placeAddr       String?
-  logisticsKind   String     // legacy — la logistique est désormais portée par les 2 booléens
-  needsEnabled    Boolean    @default(false) // liste de choses à apporter
-  tricountEnabled Boolean    @default(true)  // suivi des dépenses (Tricount)
-  hasPlaylist     Boolean    @default(false)
+  logisticsKind   String // legacy — la logistique est désormais portée par les 2 booléens
+  needsEnabled    Boolean   @default(false) // liste de choses à apporter
+  tricountEnabled Boolean   @default(true) // suivi des dépenses (Tricount)
+  hasPlaylist     Boolean   @default(false)
   playlistUrl     String?
-  cancelledAt     DateTime?  // null = sortie active ; sinon date d'annulation
-  cancelReason    String?    @db.VarChar(500)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  groupId         String? // tenant (obligatoire à terme, optionnel pour migrer l'existant)
+  group           Group?    @relation(fields: [groupId], references: [id])
+  cancelledAt     DateTime? // null = sortie active ; sinon date d'annulation
+  cancelReason    String?   @db.VarChar(500)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   rsvps    EventRsvp[]
   needs    EventNeed[]
@@ -118,39 +133,39 @@ model EventRsvp {
 }
 
 model EventNeed {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   eventId     String
-  event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   label       String
   claimedById String?
-  claimedBy   User?   @relation("NeedClaim", fields: [claimedById], references: [id], onDelete: SetNull)
+  claimedBy   User?    @relation("NeedClaim", fields: [claimedById], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
 
   @@index([eventId])
 }
 
 model EventExpense {
-  id          String   @id @default(cuid())
-  eventId     String
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  payerId     String
-  payer       User     @relation("ExpensePayer", fields: [payerId], references: [id], onDelete: Cascade)
-  label       String
-  amount      Float
-  forUserIds  String[]
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  payerId    String
+  payer      User     @relation("ExpensePayer", fields: [payerId], references: [id], onDelete: Cascade)
+  label      String
+  amount     Float
+  forUserIds String[]
+  createdAt  DateTime @default(now())
 
   @@index([eventId])
 }
 
 model EventComment {
-  id        String   @id @default(cuid())
+  id        String          @id @default(cuid())
   eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event     Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  text      String   @db.VarChar(500)
-  createdAt DateTime @default(now())
+  author    User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  text      String          @db.VarChar(500)
+  createdAt DateTime        @default(now())
   reports   CommentReport[]
 
   @@index([eventId])
@@ -197,12 +212,14 @@ model Presence {
 
 model Invitation {
   id            String    @id @default(cuid())
-  email         String?   // null = lien d'invitation générique (à usage unique, tout email)
+  email         String? // null = lien d'invitation générique (à usage unique, tout email)
   token         String    @unique @default(cuid())
   expiresAt     DateTime
   usedAt        DateTime?
   invitedUserId String?   @unique
   invitedUser   User?     @relation("InvitedUser", fields: [invitedUserId], references: [id])
+  groupId       String? // groupe cible de l'invitation
+  group         Group?    @relation(fields: [groupId], references: [id])
   createdAt     DateTime  @default(now())
 }
 
@@ -246,8 +263,9 @@ model VerificationToken {
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
 enum Role {
-  ADMIN
-  MEMBER
+  SUPER_ADMIN // global : pilote tous les groupes
+  ADMIN // local : admin de son groupe
+  MEMBER // local : membre de son groupe
 }
 
 enum EventType {
