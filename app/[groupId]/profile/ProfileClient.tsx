@@ -251,7 +251,7 @@ export function ProfileClient({ user, memberCount, invitationCount, reportsCount
           <p className="text-[13.5px] text-muted-foreground mt-0.5">{user.email}</p>
           <div className="flex items-center gap-2 mt-3">
             <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-primary bg-primary-light px-2.5 py-1 rounded-full">
-              <Shield className="w-3.5 h-3.5" /> {user.role === "ADMIN" ? "Admin" : "Membre"}
+              <Shield className="w-3.5 h-3.5" /> {user.role === "SUPER_ADMIN" ? "Super Admin" : user.role === "ADMIN" ? "Admin" : "Membre"}
             </span>
             <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-muted-foreground bg-surface border border-border pl-2 pr-2.5 py-1 rounded-full">
               <span className="w-3 h-3 rounded-full ring-1 ring-white/60" style={{ backgroundColor: color }} /> Ta couleur
