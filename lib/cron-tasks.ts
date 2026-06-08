@@ -75,17 +75,19 @@ export async function runPresenceReminders() {
 
   // Regroupe par groupe : on ne compare jamais des présences de groupes différents.
   const byGroup = new Map<string, P[]>();
-  for (const u of present.values()) {
-    if (!u.groupId) continue;
-    (byGroup.get(u.groupId) ?? byGroup.set(u.groupId, []).get(u.groupId)!).push(u);
-  }
+  Array.from(present.values()).forEach((u) => {
+    if (!u.groupId) return;
+    const arr = byGroup.get(u.groupId);
+    if (arr) arr.push(u);
+    else byGroup.set(u.groupId, [u]);
+  });
 
   const joinNames = (names: string[]) =>
     names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} et ${names[names.length - 1]}`;
 
   let sent = 0;
   let totalPresent = 0;
-  for (const [groupId, people] of byGroup) {
+  for (const [groupId, people] of Array.from(byGroup.entries())) {
     if (people.length < 2) continue;
     totalPresent += people.length;
     for (const u of people) {
