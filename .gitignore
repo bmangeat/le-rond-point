@@ -37,6 +37,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
-prisma/migrations/
+# prisma — les migrations DOIVENT être versionnées (historique partagé dev/QA/prod)
 .env*

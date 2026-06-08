@@ -9,7 +9,7 @@ fichier = état réel et à jour du projet.**
 
 ## Stack
 - **Next.js 14** (App Router) · **React 18** · **TypeScript** · **Tailwind** (design tokens custom dans `tailwind.config.ts` + `app/globals.css`)
-- **Prisma** + **Neon** (PostgreSQL serverless) — **une seule base, partagée entre local et prod**
+- **Prisma** + **Neon** — **3 environnements à bases séparées** (dev Docker · QA Neon · prod Neon) + **migrations Prisma versionnées**. Voir **docs/ENVIRONMENTS.md**.
 - **NextAuth v5** (Google OAuth) — sessions **JWT**
 - **Web Push** (web-push + VAPID) · **Vercel Blob** (photos) · **Vercel Cron** (tâche quotidienne)
 - **Resend** prévu pour les emails mais **PAS branché** (pas de domaine) — toggle email masqué dans l'UI
@@ -30,8 +30,8 @@ vercel link            # lier au projet le-rond-point (compte bmangeat)
 #   BLOB_READ_WRITE_TOKEN (récup via `vercel blob` ou env Vercel), CRON_SECRET
 npm run dev            # http://localhost:3000
 ```
-- **Prisma CLI ne lit pas `.env.local`** → passer `DATABASE_URL=... npm run db:push` en inline.
-- Après modif du schéma : `DATABASE_URL=... npm run db:push` (met à jour la base partagée local+prod).
+- **Prisma CLI ne lit pas `.env.local`** → dupliquer `DATABASE_URL`/`DIRECT_URL` dans `.env`, ou les passer inline.
+- **Dev local = Postgres Docker** (`docker compose up -d`), plus la prod. Après modif du schéma : `npm run migrate:dev` (crée une migration + applique en local). **Ne plus utiliser `db push`.** Détails : **docs/ENVIRONMENTS.md**.
 
 ## Auth (points clés)
 - **Sessions JWT partout** (`lib/auth.ts`) — obligatoire car le middleware tourne en Edge Runtime où Prisma est interdit. Le rôle/infos sont chargés dans le token au **login** (callback `jwt`).
