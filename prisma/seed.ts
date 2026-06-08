@@ -9,7 +9,7 @@ const isLocal = url.includes("localhost") || url.includes("127.0.0.1") || url.in
 if (!isLocal && process.env.SEED_CONFIRM !== "1") {
   console.error(
     "⛔ DATABASE_URL ne pointe pas sur une base locale.\n" +
-      "   Pour seeder QA volontairement : SEED_CONFIRM=1 npm run db:seed"
+      "   Pour seeder QA volontairement : SEED_CONFIRM=1 npm run db:seed (ou npm run seed:qa)"
   );
   process.exit(1);
 }
@@ -21,79 +21,87 @@ const day = (offset: number) => {
   return d;
 };
 
-const TEST_MEMBERS = [
-  { email: "alex@example.test", name: "Alex", memberColor: 2, city: "Lyon", isResident: false },
-  { email: "thomas@example.test", name: "Thomas", memberColor: 3, city: "Strasbourg", isResident: true },
-  { email: "julie@example.test", name: "Julie", memberColor: 9, city: "Berlin", isResident: false },
-  { email: "sam@example.test", name: "Sam", memberColor: 6, city: "Strasbourg", isResident: true },
-];
+// Upsert d'un groupe par nom (idempotent — pas de contrainte unique sur name)
+async function upsertGroup(name: string) {
+  const existing = await prisma.group.findFirst({ where: { name } });
+  if (existing) return existing;
+  return prisma.group.create({ data: { name } });
+}
 
 async function main() {
-  console.log("🌱 Seeding…");
+  console.log("🌱 Seeding (multi-tenant)…");
 
-  // Admin fondateur
+  // ── Deux groupes pour la recette de cloisonnement ──
+  const groupA = await upsertGroup("Le Rond Point");
+  const groupB = await upsertGroup("Les Voisins");
+
+  // ── Utilisateurs ──
+  // Brice : SUPER_ADMIN (plateforme), rattaché au groupe A pour avoir un "chez-soi".
   const admin = await prisma.user.upsert({
     where: { email: "brice.mangeat@gmail.com" },
-    update: {},
-    create: { email: "brice.mangeat@gmail.com", name: "Brice", role: Role.ADMIN, memberColor: 1, isActive: true },
+    update: { role: Role.SUPER_ADMIN, groupId: groupA.id },
+    create: { email: "brice.mangeat@gmail.com", name: "Brice", role: Role.SUPER_ADMIN, memberColor: 1, isActive: true, groupId: groupA.id },
   });
 
-  // Membres de test
-  const members = [];
-  for (const m of TEST_MEMBERS) {
+  const people = [
+    { email: "thomas@example.test", name: "Thomas", memberColor: 3, city: "Strasbourg", isResident: true, role: Role.ADMIN, group: groupA },
+    { email: "alex@example.test", name: "Alex", memberColor: 2, city: "Lyon", isResident: false, role: Role.MEMBER, group: groupA },
+    { email: "julie@example.test", name: "Julie", memberColor: 9, city: "Berlin", isResident: false, role: Role.ADMIN, group: groupB },
+    { email: "sam@example.test", name: "Sam", memberColor: 6, city: "Strasbourg", isResident: true, role: Role.MEMBER, group: groupB },
+    { email: "marc@example.test", name: "Marc", memberColor: 7, city: "Nantes", isResident: false, role: Role.MEMBER, group: groupB },
+  ];
+  const byEmail: Record<string, { id: string }> = {};
+  for (const p of people) {
     const u = await prisma.user.upsert({
-      where: { email: m.email },
-      update: { isResident: m.isResident, city: m.city },
-      create: { ...m, role: Role.MEMBER, isActive: true, onboardedAt: new Date() },
+      where: { email: p.email },
+      update: { role: p.role, groupId: p.group.id, isResident: p.isResident, city: p.city },
+      create: {
+        email: p.email, name: p.name, memberColor: p.memberColor, city: p.city,
+        isResident: p.isResident, role: p.role, groupId: p.group.id, isActive: true, onboardedAt: new Date(),
+      },
     });
-    members.push(u);
+    byEmail[p.email] = u;
   }
 
-  // Présences à venir (idempotent : on ne crée que si le membre n'en a aucune future)
-  const presencePlan: { user: { id: string }; start: number; end: number; availability: "OPEN" | "BUSY" }[] = [
-    { user: members[0], start: 3, end: 6, availability: "OPEN" },
-    { user: members[2], start: 5, end: 9, availability: "OPEN" },
-    { user: admin, start: 4, end: 7, availability: "BUSY" },
+  // ── Présences à venir (par groupe) ──
+  const presences: { userId: string; start: number; end: number; avail: "OPEN" | "BUSY" }[] = [
+    { userId: byEmail["alex@example.test"].id, start: 3, end: 6, avail: "OPEN" },   // groupe A
+    { userId: admin.id, start: 4, end: 7, avail: "BUSY" },                          // groupe A
+    { userId: byEmail["marc@example.test"].id, start: 2, end: 5, avail: "OPEN" },   // groupe B
   ];
-  for (const p of presencePlan) {
-    const existing = await prisma.presence.findFirst({ where: { userId: p.user.id, endDate: { gte: day(0) } } });
-    if (!existing) {
-      await prisma.presence.create({
-        data: { userId: p.user.id, startDate: day(p.start), endDate: day(p.end), availability: p.availability },
+  for (const pr of presences) {
+    const exists = await prisma.presence.findFirst({ where: { userId: pr.userId, endDate: { gte: day(0) } } });
+    if (!exists) {
+      await prisma.presence.create({ data: { userId: pr.userId, startDate: day(pr.start), endDate: day(pr.end), availability: pr.avail } });
+    }
+  }
+
+  // ── Une sortie par groupe (idempotent par nom, + rattachement groupId) ──
+  const events = [
+    { name: "Apéro de test 🍻", hostId: admin.id, groupId: groupA.id, type: "BAR" as const },
+    { name: "Soirée test (groupe B)", hostId: byEmail["julie@example.test"].id, groupId: groupB.id, type: "SOIREE" as const },
+  ];
+  for (const ev of events) {
+    const existing = await prisma.event.findFirst({ where: { name: ev.name } });
+    if (existing) {
+      await prisma.event.update({ where: { id: existing.id }, data: { groupId: ev.groupId } });
+    } else {
+      await prisma.event.create({
+        data: {
+          type: ev.type, name: ev.name, hostId: ev.hostId, groupId: ev.groupId,
+          description: "Sortie générée par le seed.", whenAt: day(4),
+          placeName: ev.type === "BAR" ? "Le Hopper" : "Chez Julie",
+          logisticsKind: ev.type === "BAR" ? "tricount" : "list",
+          needsEnabled: ev.type === "SOIREE", tricountEnabled: ev.type === "BAR",
+          rsvps: { create: [{ userId: ev.hostId, status: "YES" }] },
+        },
       });
     }
   }
 
-  // Une sortie de test (idempotent par nom)
-  const evName = "Apéro de test 🍻";
-  let event = await prisma.event.findFirst({ where: { name: evName } });
-  if (!event) {
-    event = await prisma.event.create({
-      data: {
-        type: "BAR",
-        name: evName,
-        hostId: admin.id,
-        description: "Sortie générée par le seed.",
-        whenAt: day(4),
-        placeName: "Le Hopper",
-        placeAddr: "8 rue Oberkampf, 75011 Paris",
-        logisticsKind: "tricount",
-        needsEnabled: false,
-        tricountEnabled: true,
-        rsvps: {
-          create: [
-            { userId: admin.id, status: "YES" },
-            { userId: members[0].id, status: "YES" },
-            { userId: members[1].id, status: "PENDING" },
-          ],
-        },
-      },
-    });
-  }
-
-  console.log(`✅ Admin: ${admin.email}`);
-  console.log(`✅ ${members.length} membres de test`);
-  console.log(`✅ Sortie: ${event.name}`);
+  console.log(`✅ Groupes : ${groupA.name} (${groupA.id}) · ${groupB.name} (${groupB.id})`);
+  console.log(`✅ SUPER_ADMIN : ${admin.email}`);
+  console.log(`✅ ${people.length} membres répartis sur les 2 groupes`);
   console.log("🎉 Seed terminé !");
 }
 
