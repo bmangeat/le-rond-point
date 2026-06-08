@@ -20,15 +20,18 @@ fichier = état réel et à jour du projet.**
 ```bash
 git clone https://github.com/bmangeat/le-rond-point && cd le-rond-point
 npm install
-vercel link            # lier au projet le-rond-point (compte bmangeat)
-# .env.local : copier celui de l'ancienne machine, OU partir des valeurs Vercel.
-# Variables nécessaires (voir .env.example) :
-#   DATABASE_URL, AUTH_SECRET, NEXTAUTH_URL=http://localhost:3000
-#   AUTH_GOOGLE_ID/SECRET (en DEV : valeurs factices, le bypass dev les ignore)
-#   RESEND_API_KEY/RESEND_FROM (factices en dev)
+docker compose up -d   # Postgres local (dev) sur localhost:5432
+# .env.local ET .env (Prisma CLI lit .env) — voir .env.example :
+#   DATABASE_URL=postgresql://lrp:lrp@localhost:5432/le_rond_point?schema=public
+#   DIRECT_URL=postgresql://lrp:lrp@localhost:5432/le_rond_point?schema=public
+#   AUTH_SECRET, NEXTAUTH_URL=http://localhost:3000
+#   AUTH_GOOGLE_ID/SECRET (en DEV : factices, le bypass dev-login les ignore)
+#   RESEND_API_KEY/RESEND_FROM (optionnels — sans clé, emails no-op)
 #   NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
-#   BLOB_READ_WRITE_TOKEN (récup via `vercel blob` ou env Vercel), CRON_SECRET
-npm run dev            # http://localhost:3000
+#   BLOB_READ_WRITE_TOKEN, CRON_SECRET
+npm run migrate:deploy # applique les migrations sur le Docker
+npm run db:seed        # données de test
+npm run dev            # http://localhost:3000 (bypass dev-login : email existant)
 ```
 - **Prisma CLI ne lit pas `.env.local`** → dupliquer `DATABASE_URL`/`DIRECT_URL` dans `.env`, ou les passer inline.
 - **Dev local = Postgres Docker** (`docker compose up -d`), plus la prod. Après modif du schéma : `npm run migrate:dev` (crée une migration + applique en local). **Ne plus utiliser `db push`.** Détails : **docs/ENVIRONMENTS.md**.
@@ -65,13 +68,33 @@ npm run dev            # http://localhost:3000
 - **Commits sous `brice.mangeat@gmail.com`** (pas l'email pro) — `user.email` du repo déjà configuré.
 - **next/image** : domaines autorisés = `lh3.googleusercontent.com` + `*.public.blob.vercel-storage.com`.
 
+## Environnements & migrations  (détails : `docs/ENVIRONMENTS.md`)
+Trois envs, **bases séparées**, **migrations Prisma versionnées** (fini `db push`).
+
+| Env | Base | Déploiement | Branche |
+|-----|------|-------------|---------|
+| **dev** | Postgres **Docker** local | `npm run dev` | — |
+| **qa** | Projet **Neon QA** séparé | auto au push (build = `vercel-build`) | `qa` |
+| **prod** | Projet **Neon prod** | `vercel --prod` (manuel, Git déconnecté côté prod) | `main` |
+
+- **Connexions Prisma** : `DATABASE_URL` (poolée, runtime app) + `DIRECT_URL` (directe, migrations). En local les deux pointent sur le Docker. **Prisma CLI lit `.env`** (pas `.env.local`) → dupliquer les 2 lignes dans `.env` ou les passer inline.
+- **Node 18 requis** pour Prisma/sharp/Next : `export PATH="/Users/brice/.nvm/versions/node/v18.20.0/bin:$PATH"` (le `node` par défaut est en 16).
+- **Workflow** : modif `schema.prisma` → `npm run migrate:dev` (crée + applique en local) → commit le dossier de migration → push `qa` (déploie QA, `migrate deploy` auto) → merge `qa`→`main` → `vercel --prod`.
+- **`vercel-build`** lance `prisma migrate deploy` avant `next build` → chaque déploiement applique les migrations en attente sur la base de l'env. **`DIRECT_URL` doit être défini dans Vercel** (QA + prod), sinon le build casse.
+- **Prod baselinée** une fois (`migrate resolve --applied 0_init`) car créée à l'origine via `db push`. Toute nouvelle base (QA, dev) applique `0_init` normalement.
+- **Dev local** : `docker compose up -d`, `.env.local` (et `.env`) → `DATABASE_URL`/`DIRECT_URL` = `postgresql://lrp:lrp@localhost:5432/le_rond_point?schema=public`, puis `npm run migrate:deploy` + `npm run db:seed`.
+- **Seed** (`prisma/seed.ts`) : admin + membres/présences/sortie de test, idempotent, **garde-fou anti-prod** (base non-locale → exige `SEED_CONFIRM=1`).
+- **NextAuth/Vercel** : ne PAS définir `NEXTAUTH_URL` mal formé — sur Vercel l'URL est auto-détectée (trustHost). Une valeur sans `https://` ou avec guillemets → `Invalid URL` / `MIDDLEWARE_INVOCATION_FAILED`. Variables d'env Vercel : bien cocher le scope **Production** (la branche prod du projet QA = `qa` → c'est une « Production » deployment).
+- **Login QA/prod** : builds de prod → **bypass dev-login désactivé**, seul Google marche → ajouter le callback `https://<env>.vercel.app/api/auth/callback/google` dans Google Cloud.
+
 ## Déploiement
 ```bash
-git push origin main
-vercel --prod --yes      # déploie ; CLI connectée (compte bmangeat)
+# PROD (Git déconnecté → CLI uniquement)
+vercel --prod --yes      # CLI connectée (compte bmangeat)
+
+# QA (auto) : git push origin qa
 ```
-La connexion auto GitHub→Vercel n'est PAS branchée (déploiement via CLI). Les variables
-d'env de prod sont dans Vercel (Settings → Environment Variables).
+Variables d'env de chaque env dans le projet Vercel correspondant (Settings → Environment Variables).
 
 ## En attente / non fait
 - Design **connexion + invitation + onboarding** (fichier `app-auth.jsx` du handoff v2 jamais reçu).
