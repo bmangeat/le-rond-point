@@ -1,6 +1,14 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Init paresseux : Resend n'est pas branché partout (dev/QA sans clé).
+// On n'instancie le client qu'à l'envoi, et on no-op si la clé manque —
+// évite de faire planter le build (« Missing API key ») au chargement du module.
+let _resend: Resend | null = null;
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
 
 const FROM = process.env.RESEND_FROM ?? "Le Rond Point <onboarding@resend.dev>";
 const BASE_URL = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
@@ -17,6 +25,9 @@ export async function sendInvitationEmail({
   inviterName: string;
 }) {
   const inviteUrl = `${BASE_URL}/invite/${token}`;
+
+  const resend = getResend();
+  if (!resend) return; // Resend non configuré → on ignore silencieusement
 
   await resend.emails.send({
     from: FROM,
@@ -63,6 +74,9 @@ export async function sendOverlapNotification({
     d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 
   const calendarUrl = `${BASE_URL}/`;
+
+  const resend = getResend();
+  if (!resend) return; // Resend non configuré → on ignore silencieusement
 
   await resend.emails.send({
     from: FROM,
