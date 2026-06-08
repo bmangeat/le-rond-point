@@ -42,6 +42,17 @@ npm run dev            # http://localhost:3000 (bypass dev-login : email existan
 - **Google** : `allowDangerousEmailAccountLinking` (lie au user seedé/invité par email). Redirect URI prod : `https://le-rond-point.vercel.app/api/auth/callback/google`.
 - **Rôle admin périmé dans le token** : ne JAMAIS se fier au rôle du token pour autoriser. Le contrôle admin se fait **en base** côté Node via `getAdminSession()` (`lib/admin.ts`) dans les pages/API `/admin` et `/sorties/[id]` (édition). Le middleware ne contrôle QUE la connexion.
 
+## Multi-tenant ⚠️ EN COURS sur la branche `qa` UNIQUEMENT (pas en prod/`main`)
+Transformation mono-groupe → multi-communautés (« Rond Points ») étanches. Phases 1→5 faites sur `qa`.
+- **Modèle** : `Group` (id, name) ; `groupId` (nullable) sur `User`/`Event`/`Invitation`. Cloisonnement : présences via `user.groupId`, commentaires/photos via `event.groupId`.
+- **Rôles** (`enum Role`) : `SUPER_ADMIN` (global, tous groupes) · `ADMIN` (local, son groupe) · `MEMBER`. (On a gardé `MEMBER`, pas `MEMBRE`.)
+- **Routing** : toutes les pages applicatives sous `app/[groupId]/...`. À la racine : `/` = redirecteur (→ `/[groupId]` ou `/orphelin`), `/login`, `/invite`, `/403`, `/orphelin`. Les **API restent plates** (`/api/*`) et filtrent par le `groupId` du user en **session/base** (jamais l'URL).
+- **Garde d'accès** : `lib/group.ts` → `getCurrentUser()` (lecture base), `canAccessGroup`/`canAdminGroup`, `requireGroupAccess(groupId)` (page : `/login` · `/orphelin` · `/403`). Chaque page `[groupId]` l'appelle ; chaque route API event vérifie l'appartenance.
+- **Liens client** : hook `useGroupId()` (`lib/use-group.ts`) → préfixe tous les `href`/`router.push` par `/[groupId]` sans threader de prop.
+- **Auth** : `session.user.groupId` ; à la création (`createUser`), le user est rattaché au `groupId` de l'invitation ; couleur membre unique **par groupe**.
+- **QA** : 2 groupes seedés (Le Rond Point `cmq5li5jk0000pn25i8gdb6y3` / Les Voisins `cmq5li5kz0001pn25mkebd2vg`), Brice = SUPER_ADMIN. Création de groupes = manuelle (Studio QA / seed).
+- **Reste à faire** : scoper le cron quotidien par groupe ; stratégie de migration prod (rattacher les membres existants à un groupe, rendre `groupId` obligatoire) avant tout merge vers `main`.
+
 ## Modèle de données (Prisma — `prisma/schema.prisma`)
 - **User** : profil (name, image, city, birthday, phone, instagram/snapchat/tiktok/linkedin), `memberColor` (1-12), `role`, `isActive` (soft delete), prefs notif (`notifPush`, `notifPushOverlap/Birthday/Presence/Photos/Events`).
 - **Presence** : userId, startDate/endDate (**minuit UTC**), availability (OPEN/BUSY), note.
