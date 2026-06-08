@@ -6,6 +6,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { EventGlyph } from "@/components/events/EventGlyph";
 import { eventType, fmtEventWhen, rsvpCounts } from "@/lib/events";
+import { requireGroupAccess } from "@/lib/group";
 import { Clock, MapPin, Plus } from "lucide-react";
 
 const STATUS_CHIP: Record<string, { t: string; cls: string }> = {
@@ -14,15 +15,16 @@ const STATUS_CHIP: Record<string, { t: string; cls: string }> = {
   PENDING: { t: "À répondre", cls: "text-busy bg-busy-light" },
 };
 
-export default async function SortiesPage() {
+export default async function SortiesPage({ params }: { params: { groupId: string } }) {
   const session = await auth();
   if (!session) redirect("/login");
+  await requireGroupAccess(params.groupId);
 
   const since = new Date();
   since.setHours(0, 0, 0, 0);
 
   const events = await db.event.findMany({
-    where: { whenAt: { gte: since } },
+    where: { whenAt: { gte: since }, groupId: params.groupId },
     orderBy: { whenAt: "asc" },
     include: {
       rsvps: { include: { user: { select: { id: true, name: true, image: true, memberColor: true } } } },
@@ -59,7 +61,7 @@ export default async function SortiesPage() {
               const chip = STATUS_CHIP[myStatus];
               const cancelled = !!ev.cancelledAt;
               return (
-                <Link key={ev.id} href={`/sorties/${ev.id}`} className={`card block ${cancelled ? "opacity-60" : ""}`}>
+                <Link key={ev.id} href={`/${params.groupId}/sorties/${ev.id}`} className={`card block ${cancelled ? "opacity-60" : ""}`}>
                   <div className="flex items-center gap-3">
                     <div className={cancelled ? "grayscale" : ""}>
                       <EventGlyph type={ev.type} size={50} radius={15} />
@@ -97,7 +99,7 @@ export default async function SortiesPage() {
         )}
       </div>
 
-      <Link href="/sorties/nouveau" className="fab" aria-label="Créer une sortie">
+      <Link href={`/${params.groupId}/sorties/nouveau`} className="fab" aria-label="Créer une sortie">
         <Plus className="w-7 h-7" />
       </Link>
     </AppShell>

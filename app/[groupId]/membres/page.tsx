@@ -1,15 +1,20 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireGroupAccess } from "@/lib/group";
 import { MembersDirectoryClient } from "./MembersDirectoryClient";
 
 export default async function MembersDirectoryPage({
+  params,
   searchParams,
 }: {
+  params: { groupId: string };
   searchParams: { filter?: string };
 }) {
   const session = await auth();
   if (!session) redirect("/login");
+  await requireGroupAccess(params.groupId);
+  const groupId = params.groupId;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -23,12 +28,12 @@ export default async function MembersDirectoryPage({
   // Membres + présences en cours/à venir (pour les badges) — en parallèle
   const [members, presences] = await Promise.all([
     db.user.findMany({
-      where: { isActive: true },
+      where: { isActive: true, groupId },
       select: { id: true, name: true, image: true, city: true, memberColor: true, isResident: true },
       orderBy: { name: "asc" },
     }),
     db.presence.findMany({
-      where: { endDate: { gte: today }, user: { isActive: true } },
+      where: { endDate: { gte: today }, user: { isActive: true, groupId } },
       select: { userId: true, startDate: true, endDate: true },
     }),
   ]);

@@ -1,11 +1,14 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireGroupAccess, canAdminGroup } from "@/lib/group";
 import { ProfileClient } from "./ProfileClient";
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ params }: { params: { groupId: string } }) {
   const session = await auth();
   if (!session) redirect("/login");
+  const me = await requireGroupAccess(params.groupId);
+  const groupId = params.groupId;
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
@@ -20,15 +23,15 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/login");
 
-  // Compteurs pour la carte Administration (admins)
+  // Compteurs pour la carte Administration (admins) — scopés au groupe courant
   let memberCount = 0;
   let invitationCount = 0;
   let reportsCount = 0;
-  if (user.role === "ADMIN") {
+  if (canAdminGroup(me, groupId)) {
     [memberCount, invitationCount, reportsCount] = await Promise.all([
-      db.user.count({ where: { isActive: true } }),
-      db.invitation.count({ where: { usedAt: null, expiresAt: { gt: new Date() } } }),
-      db.eventComment.count({ where: { reports: { some: {} } } }),
+      db.user.count({ where: { isActive: true, groupId } }),
+      db.invitation.count({ where: { usedAt: null, expiresAt: { gt: new Date() }, groupId } }),
+      db.eventComment.count({ where: { event: { groupId }, reports: { some: {} } } }),
     ]);
   }
 

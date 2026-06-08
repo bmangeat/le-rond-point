@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useGroupId } from "@/lib/use-group";
 import { EVENT_TYPES, EVENT_TYPE_ORDER, EventTypeKey, fmtEventWhen } from "@/lib/events";
 import { X, Search, MapPin, Clock, Plus, Rocket } from "lucide-react";
 
@@ -25,6 +26,7 @@ function localDt(d: Date, h: number, m = 0): string {
 
 export function CreateEventClient() {
   const router = useRouter();
+  const g = useGroupId();
   const [type, setType] = useState<EventTypeKey | null>(null);
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
@@ -97,7 +99,7 @@ export function CreateEventClient() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      router.push(`/sorties/${data.id}`);
+      router.push(`/${g}/sorties/${data.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
       setSubmitting(false);
@@ -110,7 +112,7 @@ export function CreateEventClient() {
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Header */}
       <div className="flex-shrink-0 flex items-center gap-3 px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 border-b border-border">
-        <button onClick={() => router.push("/sorties")} aria-label="Fermer" className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+        <button onClick={() => router.push(`/${g}/sorties`)} aria-label="Fermer" className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
           <X className="w-5 h-5 text-muted-foreground" />
         </button>
         <h1 className="text-[19px] font-bold tracking-tight">Nouvelle sortie</h1>

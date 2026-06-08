@@ -7,6 +7,7 @@ import { AvailabilityBadge } from "@/components/shared/AvailabilityBadge";
 import { formatDateRange } from "@/lib/utils";
 import { eventType, fmtEventWhen } from "@/lib/events";
 import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
+import { useGroupId } from "@/lib/use-group";
 
 interface DayPresence {
   id: string;
@@ -62,6 +63,7 @@ export function DayDetailSheet({
   onEditPresence,
 }: DayDetailSheetProps) {
   useLockBodyScroll(true);
+  const g = useGroupId();
   return (
     <>
       <div className="sheet-backdrop animate-fade-in" onClick={onClose} />
@@ -111,7 +113,7 @@ export function DayDetailSheet({
                 return (
                   <Link
                     key={ev.id}
-                    href={`/sorties/${ev.id}`}
+                    href={`/${g}/sorties/${ev.id}`}
                     onClick={onClose}
                     className="block rounded-2xl border border-border bg-surface p-3 active:scale-[0.99] transition-transform"
                   >
@@ -161,7 +163,7 @@ export function DayDetailSheet({
               const isOwn = p.user.id === currentUserId;
               return (
                 <div key={p.id} className="flex gap-3 py-2 border-b border-border last:border-0">
-                  <Link href={`/membres/${p.user.id}`} className="flex-shrink-0">
+                  <Link href={`/${g}/membres/${p.user.id}`} className="flex-shrink-0">
                     <Avatar
                       name={p.user.name}
                       image={p.user.image}
@@ -171,7 +173,7 @@ export function DayDetailSheet({
                   </Link>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <Link href={`/membres/${p.user.id}`} className="text-body-strong font-semibold hover:underline">
+                      <Link href={`/${g}/membres/${p.user.id}`} className="text-body-strong font-semibold hover:underline">
                         {p.user.name}
                       </Link>
                       {isOwn && (

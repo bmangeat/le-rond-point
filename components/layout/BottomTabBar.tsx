@@ -5,16 +5,19 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CalendarDays, List, PartyPopper, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useGroupId } from "@/lib/use-group";
 
+// Sous-chemins relatifs au groupe ("" = accueil du groupe)
 const tabs = [
-  { href: "/",           label: "Calendrier",  Icon: CalendarDays },
-  { href: "/presences",  label: "Présences",   Icon: List },
-  { href: "/sorties",    label: "Sorties",     Icon: PartyPopper },
-  { href: "/profile",    label: "Profil",      Icon: User },
+  { sub: "",           label: "Calendrier",  Icon: CalendarDays },
+  { sub: "/presences", label: "Présences",   Icon: List },
+  { sub: "/sorties",   label: "Sorties",     Icon: PartyPopper },
+  { sub: "/profile",   label: "Profil",      Icon: User },
 ];
 
 export function BottomTabBar() {
   const pathname = usePathname();
+  const g = useGroupId();
   // Nombre de commentaires signalés (0 si non-admin). Rafraîchi à chaque
   // navigation pour que la pastille disparaisse après traitement dans /admin.
   const [reports, setReports] = useState(0);
@@ -30,12 +33,13 @@ export function BottomTabBar() {
 
   return (
     <nav className="bottom-nav">
-      {tabs.map(({ href, label, Icon }) => {
-        const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
-        const showBadge = href === "/profile" && reports > 0;
+      {tabs.map(({ sub, label, Icon }) => {
+        const href = `/${g}${sub}`;
+        const active = sub === "" ? pathname === `/${g}` : pathname.startsWith(href);
+        const showBadge = sub === "/profile" && reports > 0;
         return (
           <Link
-            key={href}
+            key={sub}
             href={href}
             className={cn(
               "flex flex-col items-center gap-0.5 px-4 py-1 rounded-lg transition-colors",

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { useLockBodyScroll } from "@/lib/use-lock-body-scroll";
+import { useGroupId } from "@/lib/use-group";
 import { Mail, UserMinus, Clock, ChevronLeft, ChevronRight, Link2, Copy, Check, X, Shield, User, Trash2, Flag } from "lucide-react";
 import Link from "next/link";
 import type { Session } from "next-auth";
@@ -46,6 +47,7 @@ interface AdminClientProps {
 
 export function AdminClient({ session, members, pendingInvitations, reportedComments }: AdminClientProps) {
   const router = useRouter();
+  const g = useGroupId();
   const refresh = useCallback(() => router.refresh(), [router]);
 
   // Liste locale des invitations en attente (mise à jour optimiste).
@@ -180,7 +182,7 @@ export function AdminClient({ session, members, pendingInvitations, reportedComm
       <div className="px-4 pt-6 pb-8 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Link href="/profile" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
+          <Link href={`/${g}/profile`} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <h1 className="text-heading-1">Administration</h1>
@@ -199,7 +201,7 @@ export function AdminClient({ session, members, pendingInvitations, reportedComm
                     <p className="text-caption">
                       <span className="font-semibold text-foreground">{c.author.name}</span>
                       {" · "}
-                      <Link href={`/sorties/${c.event.id}`} className="text-primary hover:underline">{c.event.name}</Link>
+                      <Link href={`/${g}/sorties/${c.event.id}`} className="text-primary hover:underline">{c.event.name}</Link>
                     </p>
                     <span className="text-2xs font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
                       {c._count.reports} signalement{c._count.reports > 1 ? "s" : ""}
@@ -397,7 +399,7 @@ export function AdminClient({ session, members, pendingInvitations, reportedComm
 
               {/* Voir le profil complet */}
               <Link
-                href={`/membres/${selectedMember.id}`}
+                href={`/${g}/membres/${selectedMember.id}`}
                 className="flex items-center justify-between gap-3 text-sm text-primary font-medium"
               >
                 Voir le profil complet

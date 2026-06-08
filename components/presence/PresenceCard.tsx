@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/shared/Avatar";
 import { AvailabilityBadge } from "@/components/shared/AvailabilityBadge";
 import { formatDateRange } from "@/lib/utils";
+import { useGroupId } from "@/lib/use-group";
 import { MapPin } from "lucide-react";
 
 interface PresenceCardProps {
@@ -29,10 +30,11 @@ interface PresenceCardProps {
 export function PresenceCard({ presence, currentUserId, onEdit, onDelete }: PresenceCardProps) {
   const { user, startDate, endDate, note, availability } = presence;
   const isOwn = user.id === currentUserId;
+  const g = useGroupId();
 
   return (
     <div className="card flex gap-3">
-      <Link href={`/membres/${user.id}`} className="flex-shrink-0">
+      <Link href={`/${g}/membres/${user.id}`} className="flex-shrink-0">
         <Avatar
           name={user.name}
           image={user.image}
@@ -43,7 +45,7 @@ export function PresenceCard({ presence, currentUserId, onEdit, onDelete }: Pres
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <Link href={`/membres/${user.id}`} className="text-body-strong font-semibold text-foreground hover:underline">
+            <Link href={`/${g}/membres/${user.id}`} className="text-body-strong font-semibold text-foreground hover:underline">
               {user.name}
             </Link>
             {user.city && (

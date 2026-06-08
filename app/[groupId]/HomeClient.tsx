@@ -12,6 +12,7 @@ import { Avatar } from "@/components/shared/Avatar";
 import { AvailabilityBadge } from "@/components/shared/AvailabilityBadge";
 import { getMemberColor, formatDateRange, hexA } from "@/lib/utils";
 import { eventType, fmtEventWhen } from "@/lib/events";
+import { useGroupId } from "@/lib/use-group";
 import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import type { Session } from "next-auth";
 
@@ -38,6 +39,7 @@ const dayKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d
 
 export function HomeClient({ session, presences, myPresencesWithOverlaps, events, residents, isPresentToday, isSingleDayToday }: HomeClientProps) {
   const router = useRouter();
+  const g = useGroupId();
   const me = session.user.id;
   const today = new Date();
 
@@ -79,7 +81,7 @@ export function HomeClient({ session, presences, myPresencesWithOverlaps, events
             <img src="/icons/icon-192.png" alt="Le Rond Point" className="w-11 h-11 rounded-2xl shadow-sm" />
             <h1 className="text-[23px] font-extrabold tracking-tight leading-none">Le Rond Point</h1>
           </div>
-          <Link href="/profile" aria-label="Mon profil">
+          <Link href={`/${g}/profile`} aria-label="Mon profil">
             <Avatar name={session.user.name ?? ""} image={session.user.image} memberColor={session.user.memberColor} size="md" />
           </Link>
         </div>
@@ -113,7 +115,7 @@ export function HomeClient({ session, presences, myPresencesWithOverlaps, events
         {/* 3bis. Les locaux (résidents) */}
         {residents.length > 0 && (
           <section className="mb-6">
-            <Link href="/membres?filter=residents" className="card p-3.5 flex items-center gap-3 active:scale-[0.99] transition-transform">
+            <Link href={`/${g}/membres?filter=residents`} className="card p-3.5 flex items-center gap-3 active:scale-[0.99] transition-transform">
               <div className="flex -space-x-2 flex-shrink-0">
                 {residents.slice(0, 5).map(u => (
                   <div key={u.id} className="ring-2 ring-surface rounded-full">
@@ -147,7 +149,7 @@ export function HomeClient({ session, presences, myPresencesWithOverlaps, events
                   : status === "NO" ? { t: "Sans toi", c: "text-destructive bg-destructive/10" }
                   : { t: "À répondre", c: "text-busy bg-busy-light" };
                 return (
-                  <Link key={ev.id} href={`/sorties/${ev.id}`} className="flex-shrink-0 w-[150px] bg-surface border border-border rounded-2xl p-3 flex flex-col gap-2">
+                  <Link key={ev.id} href={`/${g}/sorties/${ev.id}`} className="flex-shrink-0 w-[150px] bg-surface border border-border rounded-2xl p-3 flex flex-col gap-2">
                     <div className="flex items-center gap-2.5">
                       <div className="w-9 h-9 rounded-[10px] flex items-center justify-center text-[18px] flex-shrink-0" style={{ background: ty.tint }}>{ty.emoji}</div>
                       <div className="flex-1 min-w-0">

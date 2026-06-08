@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireGroupAccess } from "@/lib/group";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { BackButton } from "@/components/shared/BackButton";
@@ -12,9 +13,10 @@ import {
 } from "@/lib/social";
 import { Phone, MessageCircle, Instagram, Linkedin, Cake, MapPin, Music2, Ghost } from "lucide-react";
 
-export default async function MemberPage({ params }: { params: { id: string } }) {
+export default async function MemberPage({ params }: { params: { groupId: string; id: string } }) {
   const session = await auth();
   if (!session) redirect("/login");
+  await requireGroupAccess(params.groupId);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -25,7 +27,7 @@ export default async function MemberPage({ params }: { params: { id: string } })
       where: { id: params.id },
       select: {
         id: true, name: true, image: true, city: true, memberColor: true, role: true,
-        isActive: true, birthday: true, phone: true, instagram: true, snapchat: true,
+        isActive: true, groupId: true, birthday: true, phone: true, instagram: true, snapchat: true,
         tiktok: true, linkedin: true,
       },
     }),
@@ -36,7 +38,8 @@ export default async function MemberPage({ params }: { params: { id: string } })
     }),
   ]);
 
-  if (!user || !user.isActive) notFound();
+  // Le membre doit exister, être actif ET appartenir au groupe de l'URL
+  if (!user || !user.isActive || user.groupId !== params.groupId) notFound();
 
   const isMe = user.id === session.user.id;
 

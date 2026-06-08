@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useGroupId } from "@/lib/use-group";
 import { Bell, Check, Home } from "lucide-react";
 import { Avatar } from "@/components/shared/Avatar";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ type Step = 0 | 1 | 2;
 
 export function OnboardingClient({ name, image, memberColor }: OnboardingClientProps) {
   const router = useRouter();
+  const g = useGroupId();
   const today = new Date().toISOString().split("T")[0];
   const firstName = name.split(" ")[0];
 
@@ -90,7 +92,7 @@ export function OnboardingClient({ name, image, memberColor }: OnboardingClientP
         if (!presRes.ok) throw new Error("Erreur lors de la création de la présence");
       }
 
-      router.replace("/");
+      router.replace(`/${g}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");

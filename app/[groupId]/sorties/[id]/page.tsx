@@ -1,11 +1,13 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireGroupAccess } from "@/lib/group";
 import { EventDetailClient } from "./EventDetailClient";
 
-export default async function EventPage({ params }: { params: { id: string } }) {
+export default async function EventPage({ params }: { params: { groupId: string; id: string } }) {
   const session = await auth();
   if (!session) redirect("/login");
+  await requireGroupAccess(params.groupId);
 
   const [event, members] = await Promise.all([
     db.event.findUnique({
@@ -19,14 +21,16 @@ export default async function EventPage({ params }: { params: { id: string } }) 
       },
     }),
     db.user.findMany({
-      where: { isActive: true },
+      where: { isActive: true, groupId: params.groupId },
       select: { id: true, name: true, image: true, memberColor: true, city: true, role: true },
     }),
   ]);
 
-  if (!event) notFound();
+  // L'event doit exister ET appartenir au groupe de l'URL (cloisonnement)
+  if (!event || event.groupId !== params.groupId) notFound();
 
-  const isAdmin = members.find(m => m.id === session.user.id)?.role === "ADMIN";
+  const myRole = members.find(m => m.id === session.user.id)?.role;
+  const isAdmin = myRole === "ADMIN" || myRole === "SUPER_ADMIN";
 
   return (
     <EventDetailClient

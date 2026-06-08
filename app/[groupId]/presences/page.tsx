@@ -1,11 +1,14 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireGroupAccess } from "@/lib/group";
 import { PresencesClient } from "./PresencesClient";
 
-export default async function PresencesPage() {
+export default async function PresencesPage({ params }: { params: { groupId: string } }) {
   const session = await auth();
   if (!session) redirect("/login");
+  await requireGroupAccess(params.groupId);
+  const groupId = params.groupId;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -15,7 +18,7 @@ export default async function PresencesPage() {
     db.presence.findMany({
       where: {
         endDate: { gte: today },
-        user: { isActive: true },
+        user: { isActive: true, groupId },
       },
       include: {
         user: {
@@ -27,7 +30,7 @@ export default async function PresencesPage() {
     db.presence.findMany({
       where: {
         endDate: { lt: today },
-        user: { isActive: true },
+        user: { isActive: true, groupId },
       },
       include: {
         user: {

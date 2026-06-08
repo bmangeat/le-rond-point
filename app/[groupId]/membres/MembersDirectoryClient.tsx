@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { BackButton } from "@/components/shared/BackButton";
+import { useGroupId } from "@/lib/use-group";
 import { Search, MapPin, ChevronRight, Home } from "lucide-react";
 
 interface DirectoryMember {
@@ -25,6 +26,7 @@ export function MembersDirectoryClient({
   members: DirectoryMember[];
   initialResidentsOnly?: boolean;
 }) {
+  const g = useGroupId();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"name" | "city">("name");
   const [hereOnly, setHereOnly] = useState(false);
@@ -129,7 +131,7 @@ export function MembersDirectoryClient({
             {filtered.map(m => (
               <Link
                 key={m.id}
-                href={`/membres/${m.id}`}
+                href={`/${g}/membres/${m.id}`}
                 className="bg-surface rounded-2xl border border-border flex items-center gap-3 p-3 hover:bg-muted transition-colors"
               >
                 <Avatar name={m.name} image={m.image} memberColor={m.memberColor} size="md" />

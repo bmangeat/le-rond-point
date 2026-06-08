@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useGroupId } from "@/lib/use-group";
 import { EVENT_TYPES, EVENT_TYPE_ORDER, EventTypeKey, fmtEventWhen } from "@/lib/events";
 import { X, Search, MapPin, Clock, Check, Ban, RotateCcw, Trash2 } from "lucide-react";
 
@@ -28,6 +29,7 @@ function toLocalInput(iso: string): string {
 
 export function EditEventClient({ event, isAdmin = false }: { event: EventData; isAdmin?: boolean }) {
   const router = useRouter();
+  const g = useGroupId();
   const [type, setType] = useState<EventTypeKey>(event.type as EventTypeKey);
   const [name, setName] = useState(event.name);
   const [desc, setDesc] = useState(event.description ?? "");
@@ -57,7 +59,7 @@ export function EditEventClient({ event, isAdmin = false }: { event: EventData; 
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      router.push(`/sorties/${event.id}`);
+      router.push(`/${g}/sorties/${event.id}`);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
@@ -73,7 +75,7 @@ export function EditEventClient({ event, isAdmin = false }: { event: EventData; 
       const res = await fetch(`/api/events/${event.id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      router.push("/sorties");
+      router.push(`/${g}/sorties`);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
@@ -137,7 +139,7 @@ export function EditEventClient({ event, isAdmin = false }: { event: EventData; 
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      router.push(`/sorties/${event.id}`);
+      router.push(`/${g}/sorties/${event.id}`);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
@@ -148,7 +150,7 @@ export function EditEventClient({ event, isAdmin = false }: { event: EventData; 
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       <div className="flex-shrink-0 flex items-center gap-3 px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 border-b border-border">
-        <button onClick={() => router.push(`/sorties/${event.id}`)} aria-label="Fermer" className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+        <button onClick={() => router.push(`/${g}/sorties/${event.id}`)} aria-label="Fermer" className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
           <X className="w-5 h-5 text-muted-foreground" />
         </button>
         <h1 className="text-[19px] font-bold tracking-tight">Modifier la sortie</h1>

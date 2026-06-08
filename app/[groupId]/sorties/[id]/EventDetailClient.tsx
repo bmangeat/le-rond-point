@@ -7,6 +7,7 @@ import { Avatar } from "@/components/shared/Avatar";
 import { EventGlyph } from "@/components/events/EventGlyph";
 import { eventType, fmtEventWhen, rsvpCounts, tricountBalances, fmtMoney, mapsUrl, RsvpStatus } from "@/lib/events";
 import { getMemberColor, hexA } from "@/lib/utils";
+import { useGroupId } from "@/lib/use-group";
 import Link from "next/link";
 import { ChevronLeft, Clock, MapPin, Navigation, Plus, Send, Check, X, Music2, Camera, Loader2, Download, CalendarPlus, Pencil, Trash2, Flag, Ban } from "lucide-react";
 
@@ -27,6 +28,7 @@ type Tab = "people" | "logistics" | "life";
 
 export function EventDetailClient({ event, members, currentUserId, isAdmin }: { event: EventData; members: Member[]; currentUserId: string; isAdmin: boolean }) {
   const router = useRouter();
+  const g = useGroupId();
   const ty = eventType(event.type);
   const accent = ty.color;
   const me = currentUserId;
@@ -121,14 +123,14 @@ export function EventDetailClient({ event, members, currentUserId, isAdmin }: { 
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Topbar */}
       <div className="flex-shrink-0 flex items-center gap-2 px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
-        <button onClick={() => router.push("/sorties")} aria-label="Retour" className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+        <button onClick={() => router.push(`/${g}/sorties`)} aria-label="Retour" className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
           <ChevronLeft className="w-5 h-5 text-muted-foreground" />
         </button>
         <div className="flex-1 text-center text-[13px] text-muted-foreground font-medium truncate">
           Organisé par {event.hostId === me ? "toi" : host?.name ?? "?"}
         </div>
         {(event.hostId === me || isAdmin) ? (
-          <Link href={`/sorties/${event.id}/edit`} aria-label="Modifier" className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+          <Link href={`/${g}/sorties/${event.id}/edit`} aria-label="Modifier" className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
             <Pencil className="w-[18px] h-[18px] text-muted-foreground" />
           </Link>
         ) : (

@@ -7,6 +7,7 @@ import { upload } from "@vercel/blob/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/shared/Avatar";
 import { getMemberColor } from "@/lib/utils";
+import { useGroupId } from "@/lib/use-group";
 import { isPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
 import { LogOut, BellRing, Bell, MapPin, User, Users, ChevronRight, ChevronDown, Shield, Camera, Loader2, Cake, Phone, Instagram, Linkedin, Music2, Ghost, Share2, Check, Home } from "lucide-react";
 
@@ -150,6 +151,7 @@ const NOTIF_TYPES = [
 
 export function ProfileClient({ user, memberCount, invitationCount, reportsCount, signOutAction }: { user: ProfileUser; memberCount: number; invitationCount: number; reportsCount: number; signOutAction: () => Promise<void> }) {
   const router = useRouter();
+  const g = useGroupId();
   const color = getMemberColor(user.memberColor);
 
   const initial = useMemo(() => makeDraft(user), [user]);
@@ -362,7 +364,7 @@ export function ProfileClient({ user, memberCount, invitationCount, reportsCount
         </Section>
 
         {/* Le quartier (annuaire des membres) */}
-        <Link href="/membres" className="bg-surface rounded-2xl shadow-sm border border-border flex items-center gap-3 p-4">
+        <Link href={`/${g}/membres`} className="bg-surface rounded-2xl shadow-sm border border-border flex items-center gap-3 p-4">
           <div className="w-[38px] h-[38px] rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0 text-primary">
             <Users className="w-5 h-5" />
           </div>
@@ -374,8 +376,8 @@ export function ProfileClient({ user, memberCount, invitationCount, reportsCount
         </Link>
 
         {/* Administration */}
-        {user.role === "ADMIN" && (
-          <Link href="/admin" className="bg-surface rounded-2xl shadow-sm border border-border flex items-center gap-3 p-4">
+        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+          <Link href={`/${g}/admin`} className="bg-surface rounded-2xl shadow-sm border border-border flex items-center gap-3 p-4">
             <div className="relative w-[38px] h-[38px] rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0 text-primary">
               <Shield className="w-5 h-5" />
               {reportsCount > 0 && (
