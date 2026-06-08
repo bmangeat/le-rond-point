@@ -26,7 +26,7 @@ interface ProfileUser {
   isResident: boolean;
   notifPushAsResident: boolean;
   memberColor: number;
-  role: "ADMIN" | "MEMBER";
+  role: "SUPER_ADMIN" | "ADMIN" | "MEMBER";
   birthday?: string | Date | null;
   phone?: string | null;
   instagram?: string | null;

@@ -16,7 +16,7 @@ interface Member {
   image?: string | null;
   city?: string | null;
   memberColor: number;
-  role: "ADMIN" | "MEMBER";
+  role: "SUPER_ADMIN" | "ADMIN" | "MEMBER";
   createdAt: Date;
 }
 
