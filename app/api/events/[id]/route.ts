@@ -4,17 +4,21 @@ import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { EVENT_TYPES, EventTypeKey, eventType } from "@/lib/events";
 import { getAdminSession } from "@/lib/admin";
+import { getCurrentUser, canAccessGroup } from "@/lib/group";
 
 // PATCH /api/events/:id — éditer une sortie (hôte ou admin)
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
-  const event = await db.event.findUnique({ where: { id: params.id }, select: { hostId: true } });
+  const event = await db.event.findUnique({ where: { id: params.id }, select: { hostId: true, groupId: true } });
   if (!event) return NextResponse.json({ error: "Sortie introuvable" }, { status: 404 });
 
-  const myUser = await db.user.findUnique({ where: { id: session.user.id }, select: { role: true } });
-  const allowed = event.hostId === session.user.id || myUser?.role === "ADMIN";
+  const me = await getCurrentUser();
+  if (!me || !event.groupId || !canAccessGroup(me, event.groupId)) {
+    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+  }
+  const allowed = event.hostId === session.user.id || me.role === "ADMIN" || me.role === "SUPER_ADMIN";
   if (!allowed) return NextResponse.json({ error: "Réservé à l'organisateur ou à un admin" }, { status: 403 });
 
   const body = await req.json();
@@ -52,9 +56,15 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
 
   const event = await db.event.findUnique({
     where: { id: params.id },
-    select: { id: true, photos: { select: { url: true } } },
+    select: { id: true, groupId: true, photos: { select: { url: true } } },
   });
   if (!event) return NextResponse.json({ error: "Sortie introuvable" }, { status: 404 });
+
+  // Un admin local ne peut supprimer que dans son groupe (super-admin partout).
+  const me = await getCurrentUser();
+  if (!me || !event.groupId || !canAccessGroup(me, event.groupId)) {
+    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+  }
 
   // Supprimer les blobs des photos (best-effort)
   for (const p of event.photos) {

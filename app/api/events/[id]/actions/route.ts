@@ -4,6 +4,7 @@ import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { isAdmin } from "@/lib/admin";
+import { getCurrentUser, canAccessGroup } from "@/lib/group";
 import { containsProfanity } from "@/lib/profanity";
 
 // POST /api/events/:id/actions — mutations du hub événement
@@ -17,8 +18,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
 
   const eventId = params.id;
-  const event = await db.event.findUnique({ where: { id: eventId }, select: { id: true, hostId: true } });
+  const event = await db.event.findUnique({ where: { id: eventId }, select: { id: true, hostId: true, groupId: true } });
   if (!event) return NextResponse.json({ error: "Sortie introuvable" }, { status: 404 });
+
+  // Cloisonnement : l'utilisateur doit appartenir au groupe de la sortie.
+  const meUser = await getCurrentUser();
+  if (!meUser || !event.groupId || !canAccessGroup(meUser, event.groupId)) {
+    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+  }
 
   const me = session.user.id;
   const body = await req.json();

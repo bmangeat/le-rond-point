@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { getCurrentUser, canAccessGroup } from "@/lib/group";
 
 function icsDate(d: Date): string {
   return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -16,13 +17,18 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   const event = await db.event.findUnique({
     where: { id: params.id },
-    select: { name: true, description: true, whenAt: true, placeName: true, placeAddr: true },
+    select: { name: true, description: true, whenAt: true, placeName: true, placeAddr: true, groupId: true },
   });
   if (!event) return NextResponse.json({ error: "Sortie introuvable" }, { status: 404 });
 
+  const me = await getCurrentUser();
+  if (!me || !event.groupId || !canAccessGroup(me, event.groupId)) {
+    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+  }
+
   const start = new Date(event.whenAt);
   const end = new Date(start.getTime() + 3 * 60 * 60 * 1000); // durée par défaut : 3 h
-  const url = `${process.env.NEXTAUTH_URL ?? new URL(req.url).origin}/sorties/${params.id}`;
+  const url = `${process.env.NEXTAUTH_URL ?? new URL(req.url).origin}/${event.groupId}/sorties/${params.id}`;
   const location = [event.placeName, event.placeAddr].filter(Boolean).join(", ");
 
   const ics = [

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { sendInvitationEmail } from "@/lib/email";
 import { getAdminSession } from "@/lib/admin";
+import { getCurrentUser } from "@/lib/group";
 import { rateLimit } from "@/lib/rate-limit";
 
 // POST /api/admin/invite — envoyer une invitation
@@ -11,6 +12,10 @@ export async function POST(req: Request) {
   if (!session) {
     return NextResponse.json({ error: "Réservé aux admins" }, { status: 403 });
   }
+
+  // L'invitation est rattachée au groupe de l'admin qui la crée.
+  const me = await getCurrentUser();
+  if (!me?.groupId) return NextResponse.json({ error: "Aucun groupe" }, { status: 403 });
 
   if (!rateLimit(`${session.user.id}:invite`, 20, 60_000)) {
     return NextResponse.json({ error: "Trop d'invitations, réessaie dans une minute." }, { status: 429 });
@@ -40,7 +45,7 @@ export async function POST(req: Request) {
 
   // Token cryptographiquement aléatoire (cuid() par défaut était devinable).
   const invitation = await db.invitation.create({
-    data: { email, expiresAt, token: randomBytes(32).toString("hex") },
+    data: { email, expiresAt, token: randomBytes(32).toString("hex"), groupId: me.groupId },
   });
 
   // Envoyer l'email

@@ -14,7 +14,7 @@ export async function getAdminSession(): Promise<Session | null> {
     select: { role: true, isActive: true },
   });
 
-  if (!user || !user.isActive || user.role !== "ADMIN") return null;
+  if (!user || !user.isActive || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) return null;
   return session;
 }
 
@@ -25,5 +25,5 @@ export async function isAdmin(userId: string): Promise<boolean> {
     where: { id: userId },
     select: { role: true, isActive: true },
   });
-  return !!user && user.isActive && user.role === "ADMIN";
+  return !!user && user.isActive && (user.role === "ADMIN" || user.role === "SUPER_ADMIN");
 }

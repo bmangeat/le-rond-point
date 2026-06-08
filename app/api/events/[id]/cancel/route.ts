@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { eventType, fmtEventWhen } from "@/lib/events";
 import { sendPushToUser } from "@/lib/push";
 import { isAdmin } from "@/lib/admin";
+import { getCurrentUser, canAccessGroup } from "@/lib/group";
 
 // POST /api/events/:id/cancel — annuler (ou réactiver) une sortie. Hôte ou admin.
 //   { cancelled: true, reason?: string } → annule + notifie les participants "YES"
@@ -14,11 +15,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const event = await db.event.findUnique({
     where: { id: params.id },
-    select: { id: true, name: true, type: true, whenAt: true, hostId: true, cancelledAt: true },
+    select: { id: true, name: true, type: true, whenAt: true, hostId: true, cancelledAt: true, groupId: true },
   });
   if (!event) return NextResponse.json({ error: "Sortie introuvable" }, { status: 404 });
 
   const me = session.user.id;
+  const meUser = await getCurrentUser();
+  if (!meUser || !event.groupId || !canAccessGroup(meUser, event.groupId)) {
+    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+  }
   const allowed = event.hostId === me || (await isAdmin(me));
   if (!allowed) return NextResponse.json({ error: "Réservé à l'organisateur ou à un admin" }, { status: 403 });
 
@@ -52,7 +57,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       await sendPushToUser(user.id, {
         title: `${meta.emoji} Sortie annulée : ${event.name}`,
         body: `La sortie du ${when.short} est annulée.${reasonSuffix}`,
-        url: `/sorties/${event.id}`,
+        url: `/${event.groupId}/sorties/${event.id}`,
         tag: `event-cancel-${event.id}`,
       });
     }

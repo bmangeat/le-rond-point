@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
+import { getCurrentUser, canAccessGroup } from "@/lib/group";
 
 // GET /api/events/:id/photos/zip — télécharge toutes les photos de la sortie en .zip
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
@@ -10,9 +11,14 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   const event = await db.event.findUnique({
     where: { id: params.id },
-    select: { name: true, photos: { select: { url: true, createdAt: true }, orderBy: { createdAt: "asc" } } },
+    select: { name: true, groupId: true, photos: { select: { url: true, createdAt: true }, orderBy: { createdAt: "asc" } } },
   });
   if (!event) return NextResponse.json({ error: "Sortie introuvable" }, { status: 404 });
+
+  const me = await getCurrentUser();
+  if (!me || !event.groupId || !canAccessGroup(me, event.groupId)) {
+    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+  }
   if (event.photos.length === 0) return NextResponse.json({ error: "Aucune photo" }, { status: 404 });
 
   const zip = new JSZip();

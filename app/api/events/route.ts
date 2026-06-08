@@ -4,11 +4,17 @@ import { NextResponse } from "next/server";
 import { EVENT_TYPES, EventTypeKey, eventType, fmtEventWhen } from "@/lib/events";
 import { sendPushToUser } from "@/lib/push";
 import { rateLimit } from "@/lib/rate-limit";
+import { getCurrentUser } from "@/lib/group";
 
 // POST /api/events — créer une sortie et prévenir le groupe
 export async function POST(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+
+  // Le créateur doit appartenir à un groupe → la sortie y est rattachée.
+  const me = await getCurrentUser();
+  if (!me?.groupId) return NextResponse.json({ error: "Aucun groupe" }, { status: 403 });
+  const groupId = me.groupId;
 
   // Une création notifie tout le groupe → on limite pour éviter le spam de push.
   if (!rateLimit(`${session.user.id}:event-create`, 10, 60_000)) {
@@ -37,6 +43,7 @@ export async function POST(req: Request) {
       type,
       name: name.trim(),
       hostId: session.user.id,
+      groupId,
       description: description?.trim() || null,
       whenAt,
       placeName: placeName.trim(),
@@ -59,7 +66,7 @@ export async function POST(req: Request) {
   // Ils apparaissent dans "En attente" sans fausser le compteur des présents (YES).
   try {
     const residents = await db.user.findMany({
-      where: { isResident: true, isActive: true, id: { not: session.user.id } },
+      where: { isResident: true, isActive: true, groupId, id: { not: session.user.id } },
       select: { id: true },
     });
     if (residents.length > 0) {
@@ -75,7 +82,7 @@ export async function POST(req: Request) {
   // Notifier le groupe (push)
   try {
     const others = await db.user.findMany({
-      where: { id: { not: session.user.id }, isActive: true, notifPush: true, notifPushEvents: true },
+      where: { id: { not: session.user.id }, isActive: true, groupId, notifPush: true, notifPushEvents: true },
       select: { id: true },
     });
     const hostName = (session.user.name ?? "Quelqu'un").split(" ")[0];
@@ -84,7 +91,7 @@ export async function POST(req: Request) {
       await sendPushToUser(u.id, {
         title: `${meta.emoji} ${hostName} balance une sortie !`,
         body: `${event.name} · ${when2.short}. Tu viens ?`,
-        url: `/sorties/${event.id}`,
+        url: `/${groupId}/sorties/${event.id}`,
         tag: `event-${event.id}`,
       });
     }

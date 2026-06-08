@@ -5,14 +5,16 @@ import { sendOverlapNotification } from "@/lib/email";
 import { sendPushToUser } from "@/lib/push";
 import { formatDateRange } from "@/lib/utils";
 import { rateLimit } from "@/lib/rate-limit";
+import { getCurrentUser } from "@/lib/group";
 
-// GET /api/presences — liste des présences
+// GET /api/presences — liste des présences (du groupe de l'utilisateur)
 export async function GET() {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  const me = await getCurrentUser();
+  if (!me) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  if (!me.groupId) return NextResponse.json([]);
 
   const presences = await db.presence.findMany({
-    where: { user: { isActive: true } },
+    where: { user: { isActive: true, groupId: me.groupId } },
     include: {
       user: { select: { id: true, name: true, image: true, city: true, memberColor: true } },
     },
@@ -63,25 +65,26 @@ export async function POST(req: Request) {
     // L'alerte "résident" ne se déclenche que si l'auteur est un expatrié.
     const author = await db.user.findUnique({
       where: { id: session.user.id },
-      select: { isResident: true },
+      select: { isResident: true, groupId: true },
     });
     const authorIsResident = author?.isResident ?? false;
+    const groupId = author?.groupId ?? "__none__"; // notifs cloisonnées au groupe
 
-    // Qui chevauche cette présence ? (la condition SQL = chevauchement de plages)
+    // Qui chevauche cette présence ? (chevauchement de plages, MÊME groupe)
     const overlapping = await db.presence.findMany({
       where: {
         userId: { not: session.user.id },
         startDate: { lte: end },
         endDate: { gte: start },
-        user: { isActive: true },
+        user: { isActive: true, groupId },
       },
       select: { userId: true },
     });
     const overlappingIds = new Set(overlapping.map(p => p.userId));
 
-    // Tous les autres membres actifs à notifier
+    // Tous les autres membres actifs du groupe à notifier
     const others = await db.user.findMany({
-      where: { id: { not: session.user.id }, isActive: true },
+      where: { id: { not: session.user.id }, isActive: true, groupId },
       select: {
         id: true, name: true, email: true,
         notifEmail: true, notifPush: true, notifPushOverlap: true, notifPushPresence: true,
