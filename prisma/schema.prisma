@@ -279,3 +279,27 @@ enum Availability {
   OPEN // Ouvert aux retrouvailles
   BUSY // Passage rapide, peu dispo
 }
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  // Acteur : pas de relation/clé étrangère volontairement — un log d'audit doit
+  // survivre à la suppression OU l'anonymisation de l'utilisateur qui a agi.
+  actorId    String   // id du SUPER_ADMIN ayant effectué l'action
+  actorEmail String   // snapshot de l'email au moment de l'action
+  action     String   // ex: "COMMENT_DELETED", "REPORTS_DISMISSED", "USER_ANONYMIZED",
+                       //     "USER_DEACTIVATED", "USER_REACTIVATED", "ROLE_CHANGED",
+                       //     "GROUP_CREATED", "EVENT_CANCELLED", "EVENT_RESTORED",
+                       //     "INVITATION_GENERATED", "INVITATION_DELETED"
+  targetType String   // ex: "User", "EventComment", "Event", "Group", "Invitation"
+  targetId   String   // id de l'entité concernée
+  groupId    String?  // contexte tenant si pertinent (simple traçabilité, pas de FK)
+  reason     String?  @db.VarChar(500) // motif saisi par l'admin (le « pourquoi »)
+  metadata   Json?    // snapshot libre (ex: texte du commentaire supprimé, nb de signalements)
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+  @@index([actorId])
+  @@index([targetType, targetId])
+}
+
